@@ -104,6 +104,8 @@ jobs:
 
       - name: Build and push Docker image
         if: steps.check.outputs.changed == 'true'
+        env:
+          DOCKER_BUILDKIT: "0"
         run: |
           TAG="${{ github.sha }}"
           SVC="${{ matrix.service }}"
@@ -135,6 +137,8 @@ jobs:
 
       - name: Build and push Docker image
         if: steps.check.outputs.changed == 'true'
+        env:
+          DOCKER_BUILDKIT: "0"
         run: |
           TAG="${{ github.sha }}"
           OWNER="${{ github.repository_owner }}"
