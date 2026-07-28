@@ -162,15 +162,22 @@ jobs:
       - name: Update image tags
         run: |
           TAG="${{ github.sha }}"
-          SERVICES="api-gateway auth-service catalog-service order-service history-service storefront"
+          OWNER="${{ github.repository_owner }}"
 
-          for svc in $SERVICES; do
-            CHANGED="${{ needs.detect-changes.outputs[format('{0}', $svc) }}"
-            if [ "$CHANGED" = "true" ]; then
+          declare -A SVC_MAP
+          SVC_MAP[api-gateway]="${{ needs.detect-changes.outputs.api-gateway }}"
+          SVC_MAP[auth-service]="${{ needs.detect-changes.outputs.auth-service }}"
+          SVC_MAP[catalog-service]="${{ needs.detect-changes.outputs.catalog-service }}"
+          SVC_MAP[order-service]="${{ needs.detect-changes.outputs.order-service }}"
+          SVC_MAP[history-service]="${{ needs.detect-changes.outputs.history-service }}"
+          SVC_MAP[storefront]="${{ needs.detect-changes.outputs.storefront }}"
+
+          for svc in "${!SVC_MAP[@]}"; do
+            if [ "${SVC_MAP[$svc]}" = "true" ]; then
               echo "Updating ${svc} -> ${TAG}"
-              cd base/${svc}
-              kustomize edit set image "ghcr.io/${{ github.repository_owner }}/${svc}=ghcr.io/${{ github.repository_owner }}/${svc}:${TAG}"
-              cd ../..
+              cd "base/${svc}"
+              kustomize edit set image "ghcr.io/${OWNER}/${svc}=ghcr.io/${OWNER}/${svc}:${TAG}"
+              cd "${GITHUB_WORKSPACE}"
             fi
           done
 
