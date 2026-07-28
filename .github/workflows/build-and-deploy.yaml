@@ -109,8 +109,8 @@ jobs:
           context: ${{ matrix.context }}
           push: true
           tags: |
-            ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:${{ github.sha }}
-            ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:latest
+            ghcr.io/ayushquasar/${{ matrix.service }}:${{ github.sha }}
+            ghcr.io/ayushquasar/${{ matrix.service }}:latest
 
   build-storefront:
     needs: detect-changes
@@ -138,8 +138,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.IMAGE_PREFIX }}/storefront:${{ github.sha }}
-            ${{ env.IMAGE_PREFIX }}/storefront:latest
+            ghcr.io/ayushquasar/storefront:${{ github.sha }}
+            ghcr.io/ayushquasar/storefront:latest
 
   update-deploy-repo:
     needs: [detect-changes, build-java-services, build-storefront]
@@ -172,7 +172,8 @@ jobs:
             if [ "${SVC_MAP[$svc]}" = "true" ]; then
               echo "Updating ${svc} -> ${TAG}"
               cd "base/${svc}"
-              kustomize edit set image "ghcr.io/${OWNER}/${svc}=ghcr.io/${OWNER}/${svc}:${TAG}"
+              OWNER_LOWER=$(echo "${OWNER}" | tr '[:upper:]' '[:lower:]')
+              kustomize edit set image "ghcr.io/${OWNER_LOWER}/${svc}=ghcr.io/${OWNER_LOWER}/${svc}:${TAG}"
               cd "${GITHUB_WORKSPACE}"
             fi
           done
