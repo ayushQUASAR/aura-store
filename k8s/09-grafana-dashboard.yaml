@@ -1,0 +1,3076 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aurastore-grafana-dashboard
+  namespace: cattle-monitoring-system
+  labels:
+    grafana_dashboard: "1"
+data:
+  aurastore-overview.json: |
+    {
+      "uid": "aurastore-prod",
+      "title": "AuraStore - Production Observability",
+      "tags": [
+        "production",
+        "e-commerce",
+        "kubernetes"
+      ],
+      "style": "dark",
+      "timezone": "browser",
+      "editable": true,
+      "graphTooltip": 1,
+      "refresh": "10s",
+      "time": {
+        "from": "now-1h",
+        "to": "now"
+      },
+      "templating": {
+        "list": [
+          {
+            "name": "service",
+            "type": "query",
+            "query": "label_values(http_server_requests_seconds_count{namespace=\"production-retail\"}, application)",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus"
+            },
+            "refresh": 2,
+            "includeAll": true,
+            "multi": true,
+            "allValue": ".*",
+            "current": {
+              "selected": true,
+              "text": "All",
+              "value": "$__all"
+            },
+            "sort": 1
+          },
+          {
+            "name": "namespace",
+            "type": "query",
+            "query": "label_values(up, namespace)",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus"
+            },
+            "refresh": 2,
+            "includeAll": false,
+            "multi": false,
+            "current": {
+              "selected": false,
+              "text": "production-retail",
+              "value": "production-retail"
+            },
+            "sort": 1,
+            "hide": 0
+          }
+        ]
+      },
+      "panels": [
+        {
+          "type": "row",
+          "title": "Application Overview",
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 0
+          },
+          "collapsed": false,
+          "id": 100,
+          "panels": []
+        },
+        {
+          "id": 1,
+          "title": "Services Online",
+          "type": "stat",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 3,
+            "w": 4,
+            "x": 0,
+            "y": 1
+          },
+          "targets": [
+            {
+              "expr": "count(up{namespace=\"production-retail\"} == 1)",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "green"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "green"
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "background",
+            "graphMode": "area",
+            "justifyMode": "auto"
+          }
+        },
+        {
+          "id": 2,
+          "title": "Services Offline",
+          "type": "stat",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 3,
+            "w": 4,
+            "x": 4,
+            "y": 1
+          },
+          "targets": [
+            {
+              "expr": "count(up{namespace=\"production-retail\"} == 0) or vector(0)",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "green"
+                  },
+                  {
+                    "value": 1,
+                    "color": "red"
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Value"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "0": {
+                            "text": "NONE",
+                            "color": "green",
+                            "index": 0
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "value": 0,
+                          "color": "green"
+                        },
+                        {
+                          "value": 1,
+                          "color": "red"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "background",
+            "graphMode": "area",
+            "justifyMode": "auto"
+          }
+        },
+        {
+          "id": 3,
+          "title": "Total Request Rate",
+          "type": "stat",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 3,
+            "w": 4,
+            "x": 8,
+            "y": 1
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(http_server_requests_seconds_count{namespace=\"production-retail\",application=~\"$service\"}[5m]))",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "blue"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "blue"
+                  }
+                ]
+              },
+              "unit": "reqps"
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "background",
+            "graphMode": "area",
+            "justifyMode": "auto"
+          }
+        },
+        {
+          "id": 4,
+          "title": "Avg Response Time",
+          "type": "stat",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 3,
+            "w": 4,
+            "x": 12,
+            "y": 1
+          },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{namespace=\"production-retail\",application=~\"$service\"}[5m])) by (le))",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "yellow"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "yellow"
+                  }
+                ]
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "background",
+            "graphMode": "area",
+            "justifyMode": "auto"
+          }
+        },
+        {
+          "id": 5,
+          "title": "Error Rate",
+          "type": "gauge",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 3,
+            "w": 4,
+            "x": 16,
+            "y": 1
+          },
+          "targets": [
+            {
+              "expr": "100 * sum(rate(http_server_requests_seconds_count{namespace=\"production-retail\",application=~\"$service\",status=~\"5..\"}[5m])) / sum(rate(http_server_requests_seconds_count{namespace=\"production-retail\",application=~\"$service\"}[5m]))",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "green"
+                  },
+                  {
+                    "value": 1,
+                    "color": "yellow"
+                  },
+                  {
+                    "value": 5,
+                    "color": "red"
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "auto",
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true
+          }
+        },
+        {
+          "id": 6,
+          "title": "Active Pods",
+          "type": "stat",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 3,
+            "w": 4,
+            "x": 20,
+            "y": 1
+          },
+          "targets": [
+            {
+              "expr": "count(kube_pod_status_phase{namespace=\"production-retail\",phase=\"Running\"})",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "purple"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "purple"
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "background",
+            "graphMode": "area",
+            "justifyMode": "auto"
+          }
+        },
+        {
+          "type": "row",
+          "title": "Service Health",
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 3
+          },
+          "collapsed": false,
+          "id": 101,
+          "panels": []
+        },
+        {
+          "id": 7,
+          "title": "Service Uptime",
+          "type": "stat",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 24,
+            "x": 0,
+            "y": 4
+          },
+          "targets": [
+            {
+              "expr": "up{namespace=\"production-retail\"}",
+              "legendFormat": "{{application}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "red"
+                  },
+                  {
+                    "value": 1,
+                    "color": "green"
+                  }
+                ]
+              },
+              "mappings": [
+                {
+                  "type": "value",
+                  "options": {
+                    "0": {
+                      "text": "DOWN",
+                      "color": "red",
+                      "index": 0
+                    },
+                    "1": {
+                      "text": "UP",
+                      "color": "green",
+                      "index": 1
+                    }
+                  }
+                }
+              ]
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "background",
+            "graphMode": "none",
+            "justifyMode": "center"
+          }
+        },
+        {
+          "type": "row",
+          "title": "HTTP Traffic",
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 8
+          },
+          "collapsed": false,
+          "id": 102,
+          "panels": []
+        },
+        {
+          "id": 8,
+          "title": "Request Rate by Service",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 0,
+            "y": 9
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(http_server_requests_seconds_count{namespace=\"production-retail\",application=~\"$service\"}[5m])) by (application)",
+              "legendFormat": "{{application}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "gradientMode": "scheme",
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "pointSize": 5,
+                "showPoints": "never",
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisLabel": "Requests/sec",
+                "scaleDistribution": {
+                  "type": "linear"
+                }
+              },
+              "unit": "reqps"
+            },
+            "overrides": []
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "mean",
+                "max"
+              ]
+            }
+          }
+        },
+        {
+          "id": 9,
+          "title": "Request Distribution by Status",
+          "type": "piechart",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 8,
+            "y": 9
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(http_server_requests_seconds_count{namespace=\"production-retail\",application=~\"$service\"}[5m])) by (status)",
+              "legendFormat": "{{status}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "options": {
+            "pieType": "donut",
+            "tooltip": {
+              "mode": "single"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "right",
+              "calcs": [
+                "lastNotNull",
+                "mean"
+              ]
+            },
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            }
+          }
+        },
+        {
+          "id": 10,
+          "title": "Response Latency (p50/p95/p99)",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 16,
+            "y": 9
+          },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.5, sum(rate(http_server_requests_seconds_bucket{namespace=\"production-retail\",application=~\"$service\"}[5m])) by (le))",
+              "legendFormat": "p50",
+              "refId": "P50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{namespace=\"production-retail\",application=~\"$service\"}[5m])) by (le))",
+              "legendFormat": "p95",
+              "refId": "P95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{namespace=\"production-retail\",application=~\"$service\"}[5m])) by (le))",
+              "legendFormat": "p99",
+              "refId": "P99"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "gradientMode": "scheme",
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "pointSize": 5,
+                "showPoints": "never",
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisLabel": "Latency (seconds)",
+                "scaleDistribution": {
+                  "type": "linear"
+                }
+              },
+              "unit": "s"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "p50"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "p95"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "yellow",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "p99"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "red",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "mean",
+                "max"
+              ]
+            }
+          }
+        },
+        {
+          "type": "row",
+          "title": "HTTP Errors",
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 16
+          },
+          "collapsed": false,
+          "id": 103,
+          "panels": []
+        },
+        {
+          "id": 11,
+          "title": "Error Rate by Service (%)",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 0,
+            "y": 17
+          },
+          "targets": [
+            {
+              "expr": "100 * sum(rate(http_server_requests_seconds_count{namespace=\"production-retail\",application=~\"$service\",status=~\"5..\"}[5m])) by (application) / sum(rate(http_server_requests_seconds_count{namespace=\"production-retail\",application=~\"$service\"}[5m])) by (application)",
+              "legendFormat": "{{application}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "gradientMode": "scheme",
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "pointSize": 5,
+                "showPoints": "never",
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisLabel": "Error Rate %",
+                "scaleDistribution": {
+                  "type": "linear"
+                }
+              },
+              "unit": "percent"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": ".+"
+                },
+                "properties": [
+                  {
+                    "id": "custom.thresholdsStyle",
+                    "value": {
+                      "mode": "line+dashed"
+                    }
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "value": 0,
+                          "color": "green"
+                        },
+                        {
+                          "value": 1,
+                          "color": "yellow"
+                        },
+                        {
+                          "value": 5,
+                          "color": "red"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "mean",
+                "max"
+              ]
+            }
+          }
+        },
+        {
+          "id": 12,
+          "title": "Error Breakdown by Status",
+          "type": "barchart",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 8,
+            "y": 17
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(http_server_requests_seconds_count{namespace=\"production-retail\",application=~\"$service\",status=~\"[45]..\"}[5m])) by (status)",
+              "legendFormat": "{{status}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "fillOpacity": 80,
+                "lineWidth": 0,
+                "gradientMode": "scheme",
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisLabel": "Requests/sec",
+                "scaleDistribution": {
+                  "type": "linear"
+                }
+              },
+              "unit": "reqps"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": "^4\\d{2}$"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "yellow",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": "^5\\d{2}$"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "red",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "orientation": "horizontal",
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "mean",
+                "max"
+              ]
+            },
+            "xTickLabelRotation": 0,
+            "showValue": "auto",
+            "groupWidth": 0.7,
+            "barWidth": 0.9,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        {
+          "id": 13,
+          "title": "Slowest Endpoints (p99)",
+          "type": "table",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 16,
+            "y": 17
+          },
+          "targets": [
+            {
+              "expr": "topk(10, histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{namespace=\"production-retail\",application=~\"$service\"}[5m])) by (application, uri, method)))",
+              "legendFormat": "{{application}} {{method}} {{uri}}",
+              "refId": "A",
+              "instant": true,
+              "format": "table"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "green"
+                  },
+                  {
+                    "value": 0.5,
+                    "color": "yellow"
+                  },
+                  {
+                    "value": 2,
+                    "color": "red"
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Value"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "p99 Latency"
+                  },
+                  {
+                    "id": "unit",
+                    "value": "s"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "method"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Method"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "uri"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Endpoint"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "application"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Service"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Time"
+                },
+                "properties": [
+                  {
+                    "id": "custom.hidden",
+                    "value": true
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "showHeader": true,
+            "sortBy": [
+              {
+                "displayName": "p99 Latency",
+                "desc": true
+              }
+            ],
+            "footer": {
+              "show": false
+            }
+          },
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time": true,
+                  "namespace": true
+                },
+                "renameByName": {
+                  "application": "Service",
+                  "method": "Method",
+                  "uri": "Endpoint",
+                  "Value": "p99 Latency"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "row",
+          "title": "Business Metrics",
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 24
+          },
+          "collapsed": false,
+          "id": 104,
+          "panels": []
+        },
+        {
+          "id": 14,
+          "title": "Total Orders",
+          "type": "stat",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 5,
+            "x": 0,
+            "y": 25
+          },
+          "targets": [
+            {
+              "expr": "sum(orders_placed_total{namespace=\"production-retail\"})",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "green"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "green"
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "background",
+            "graphMode": "area",
+            "justifyMode": "auto"
+          }
+        },
+        {
+          "id": 15,
+          "title": "Order Rate (/min)",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 5,
+            "x": 5,
+            "y": 25
+          },
+          "targets": [
+            {
+              "expr": "rate(orders_placed_total{namespace=\"production-retail\"}[5m]) * 60",
+              "legendFormat": "Orders/min",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "gradientMode": "scheme",
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "pointSize": 5,
+                "showPoints": "never",
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisLabel": "Orders / min",
+                "scaleDistribution": {
+                  "type": "linear"
+                }
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "mean",
+                "max"
+              ]
+            }
+          }
+        },
+        {
+          "id": 16,
+          "title": "Order Status Updates",
+          "type": "stat",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 5,
+            "x": 10,
+            "y": 25
+          },
+          "targets": [
+            {
+              "expr": "sum(orders_status_updates_total{namespace=\"production-retail\"})",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "blue"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "blue"
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "background",
+            "graphMode": "area",
+            "justifyMode": "auto"
+          }
+        },
+        {
+          "id": 17,
+          "title": "Login Attempts",
+          "type": "stat",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 4,
+            "x": 15,
+            "y": 25
+          },
+          "targets": [
+            {
+              "expr": "sum(auth_login_attempts_total{namespace=\"production-retail\"})",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "orange"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "orange"
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "background",
+            "graphMode": "area",
+            "justifyMode": "auto"
+          }
+        },
+        {
+          "id": 18,
+          "title": "User Registrations",
+          "type": "stat",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 5,
+            "x": 19,
+            "y": 25
+          },
+          "targets": [
+            {
+              "expr": "sum(auth_registrations_total{namespace=\"production-retail\"})",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "purple"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "purple"
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "background",
+            "graphMode": "area",
+            "justifyMode": "auto"
+          }
+        },
+        {
+          "type": "row",
+          "title": "Kafka Messaging",
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 29
+          },
+          "collapsed": false,
+          "id": 105,
+          "panels": []
+        },
+        {
+          "id": 19,
+          "title": "Kafka Send Rate",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 6,
+            "x": 0,
+            "y": 30
+          },
+          "targets": [
+            {
+              "expr": "rate(kafka_producer_record_send_total{namespace=\"production-retail\",application=~\"$service\"}[5m])",
+              "legendFormat": "{{application}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "gradientMode": "scheme",
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "pointSize": 5,
+                "showPoints": "never",
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisLabel": "Messages/sec",
+                "scaleDistribution": {
+                  "type": "linear"
+                }
+              },
+              "unit": "reqps"
+            },
+            "overrides": []
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "mean",
+                "max"
+              ]
+            }
+          }
+        },
+        {
+          "id": 20,
+          "title": "Kafka Publish Latency",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 6,
+            "x": 6,
+            "y": 30
+          },
+          "targets": [
+            {
+              "expr": "rate(spring_kafka_template_seconds_sum{namespace=\"production-retail\",application=~\"$service\"}[5m]) / rate(spring_kafka_template_seconds_count{namespace=\"production-retail\",application=~\"$service\"}[5m])",
+              "legendFormat": "{{application}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "gradientMode": "scheme",
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "pointSize": 5,
+                "showPoints": "never",
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisLabel": "Avg Latency",
+                "scaleDistribution": {
+                  "type": "linear"
+                }
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "mean",
+                "max"
+              ]
+            }
+          }
+        },
+        {
+          "id": 21,
+          "title": "Consumer Record Lead",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 6,
+            "x": 12,
+            "y": 30
+          },
+          "targets": [
+            {
+              "expr": "kafka_consumer_fetch_manager_records_lead_min{namespace=\"production-retail\",application=~\"$service\"}",
+              "legendFormat": "{{application}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "gradientMode": "scheme",
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "pointSize": 5,
+                "showPoints": "never",
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisLabel": "Records",
+                "scaleDistribution": {
+                  "type": "linear"
+                }
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "mean",
+                "max"
+              ]
+            }
+          }
+        },
+        {
+          "id": 22,
+          "title": "Catalog Fetches & Cache Evictions",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 6,
+            "x": 18,
+            "y": 30
+          },
+          "targets": [
+            {
+              "expr": "rate(catalog_fetches_total{namespace=\"production-retail\"}[5m])",
+              "legendFormat": "Fetches/sec",
+              "refId": "A"
+            },
+            {
+              "expr": "rate(catalog_cache_evictions_total{namespace=\"production-retail\"}[5m])",
+              "legendFormat": "Evictions/sec",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "gradientMode": "scheme",
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "pointSize": 5,
+                "showPoints": "never",
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisLabel": "Rate",
+                "scaleDistribution": {
+                  "type": "linear"
+                }
+              },
+              "unit": "reqps"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Evictions/sec"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "red",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "custom.lineStyle",
+                    "value": {
+                      "fill": "dash",
+                      "dash": [
+                        10,
+                        10
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "mean",
+                "max"
+              ]
+            }
+          }
+        },
+        {
+          "type": "row",
+          "title": "Database & Cache",
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 36
+          },
+          "collapsed": false,
+          "id": 106,
+          "panels": []
+        },
+        {
+          "id": 23,
+          "title": "DB Connection Pool",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 0,
+            "y": 37
+          },
+          "targets": [
+            {
+              "expr": "hikaricp_connections_active{namespace=\"production-retail\",application=~\"$service\"}",
+              "legendFormat": "{{application}} active",
+              "refId": "A"
+            },
+            {
+              "expr": "hikaricp_connections_idle{namespace=\"production-retail\",application=~\"$service\"}",
+              "legendFormat": "{{application}} idle",
+              "refId": "B"
+            },
+            {
+              "expr": "hikaricp_connections_pending{namespace=\"production-retail\",application=~\"$service\"}",
+              "legendFormat": "{{application}} pending",
+              "refId": "C"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "gradientMode": "scheme",
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "pointSize": 5,
+                "showPoints": "never",
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisLabel": "Connections",
+                "scaleDistribution": {
+                  "type": "linear"
+                }
+              },
+              "unit": "short"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*active"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*idle"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "blue",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*pending"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "orange",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "custom.fillOpacity",
+                    "value": 30
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "mean",
+                "max"
+              ]
+            }
+          }
+        },
+        {
+          "id": 24,
+          "title": "Redis Latency",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 8,
+            "y": 37
+          },
+          "targets": [
+            {
+              "expr": "rate(lettuce_command_firstresponse_seconds_sum{namespace=\"production-retail\",application=~\"$service\"}[5m]) / rate(lettuce_command_firstresponse_seconds_count{namespace=\"production-retail\",application=~\"$service\"}[5m])",
+              "legendFormat": "{{application}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "gradientMode": "scheme",
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "pointSize": 5,
+                "showPoints": "never",
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisLabel": "Avg Response Time",
+                "scaleDistribution": {
+                  "type": "linear"
+                }
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "mean",
+                "max"
+              ]
+            }
+          }
+        },
+        {
+          "id": 25,
+          "title": "Catalog Fetch Total",
+          "type": "stat",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 4,
+            "x": 16,
+            "y": 37
+          },
+          "targets": [
+            {
+              "expr": "sum(catalog_fetches_total{namespace=\"production-retail\"})",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "green"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "green"
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "background",
+            "graphMode": "area",
+            "justifyMode": "auto"
+          }
+        },
+        {
+          "id": 26,
+          "title": "Cache Evictions Total",
+          "type": "stat",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 4,
+            "x": 20,
+            "y": 37
+          },
+          "targets": [
+            {
+              "expr": "sum(catalog_cache_evictions_total{namespace=\"production-retail\"})",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "red"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "red"
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "background",
+            "graphMode": "area",
+            "justifyMode": "auto"
+          }
+        },
+        {
+          "type": "row",
+          "title": "JVM Runtime",
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 43
+          },
+          "collapsed": false,
+          "id": 107,
+          "panels": []
+        },
+        {
+          "id": 27,
+          "title": "JVM Heap Memory",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 0,
+            "y": 44
+          },
+          "targets": [
+            {
+              "expr": "jvm_memory_used_bytes{namespace=\"production-retail\",area=\"heap\",application=~\"$service\"}",
+              "legendFormat": "{{application}} used",
+              "refId": "A"
+            },
+            {
+              "expr": "jvm_memory_max_bytes{namespace=\"production-retail\",area=\"heap\",application=~\"$service\"}",
+              "legendFormat": "{{application}} max",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "gradientMode": "scheme",
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "pointSize": 5,
+                "showPoints": "never",
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisLabel": "Memory",
+                "scaleDistribution": {
+                  "type": "linear"
+                }
+              },
+              "unit": "bytes"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*max"
+                },
+                "properties": [
+                  {
+                    "id": "custom.fillOpacity",
+                    "value": 0
+                  },
+                  {
+                    "id": "custom.lineStyle",
+                    "value": {
+                      "fill": "dash",
+                      "dash": [
+                        10,
+                        10
+                      ]
+                    }
+                  },
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "yellow",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*used"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "mean",
+                "max"
+              ]
+            }
+          }
+        },
+        {
+          "id": 28,
+          "title": "JVM CPU Usage",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 8,
+            "y": 44
+          },
+          "targets": [
+            {
+              "expr": "process_cpu_usage{namespace=\"production-retail\",application=~\"$service\"}",
+              "legendFormat": "{{application}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "gradientMode": "scheme",
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "pointSize": 5,
+                "showPoints": "never",
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisLabel": "CPU Usage",
+                "scaleDistribution": {
+                  "type": "linear"
+                }
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "mean",
+                "max"
+              ]
+            }
+          }
+        },
+        {
+          "id": 29,
+          "title": "JVM Threads",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 0,
+            "y": 51
+          },
+          "targets": [
+            {
+              "expr": "jvm_threads_live_threads{namespace=\"production-retail\",application=~\"$service\"}",
+              "legendFormat": "{{application}} live",
+              "refId": "A"
+            },
+            {
+              "expr": "jvm_threads_peak_threads{namespace=\"production-retail\",application=~\"$service\"}",
+              "legendFormat": "{{application}} peak",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "gradientMode": "scheme",
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "pointSize": 5,
+                "showPoints": "never",
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisLabel": "Threads",
+                "scaleDistribution": {
+                  "type": "linear"
+                }
+              },
+              "unit": "short"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*peak"
+                },
+                "properties": [
+                  {
+                    "id": "custom.lineStyle",
+                    "value": {
+                      "fill": "dash",
+                      "dash": [
+                        10,
+                        10
+                      ]
+                    }
+                  },
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "red",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "custom.fillOpacity",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*live"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "blue",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "mean",
+                "max"
+              ]
+            }
+          }
+        },
+        {
+          "id": 30,
+          "title": "GC Pause Time",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 8,
+            "y": 51
+          },
+          "targets": [
+            {
+              "expr": "rate(jvm_gc_pause_seconds_sum{namespace=\"production-retail\",application=~\"$service\"}[5m])",
+              "legendFormat": "{{application}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "gradientMode": "scheme",
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "pointSize": 5,
+                "showPoints": "never",
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisLabel": "GC Pause Rate",
+                "scaleDistribution": {
+                  "type": "linear"
+                }
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "mean",
+                "max"
+              ]
+            }
+          }
+        },
+        {
+          "id": 31,
+          "title": "Log Events by Level",
+          "type": "barchart",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 0,
+            "y": 58
+          },
+          "targets": [
+            {
+              "expr": "sum(logback_events_total{namespace=\"production-retail\",application=~\"$service\"}) by (level)",
+              "legendFormat": "{{level}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "fillOpacity": 80,
+                "lineWidth": 0,
+                "gradientMode": "scheme",
+                "axisBorderShow": false,
+                "axisLabel": "Events",
+                "scaleDistribution": {
+                  "type": "linear"
+                }
+              },
+              "unit": "short"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "ERROR"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "red",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "WARN"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "yellow",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "INFO"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "DEBUG"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "blue",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "orientation": "horizontal",
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        {
+          "id": 32,
+          "title": "App Startup Time",
+          "type": "bargauge",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 8,
+            "y": 58
+          },
+          "targets": [
+            {
+              "expr": "application_ready_time_seconds{namespace=\"production-retail\",application=~\"$service\"}",
+              "legendFormat": "{{application}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "green"
+                  },
+                  {
+                    "value": 10,
+                    "color": "yellow"
+                  },
+                  {
+                    "value": 30,
+                    "color": "red"
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "orientation": "horizontal",
+            "displayMode": "gradient",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showUnfilled": true,
+            "minVizWidth": 0,
+            "minVizHeight": 15
+          }
+        },
+        {
+          "type": "row",
+          "title": "Kubernetes Infrastructure",
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 64
+          },
+          "collapsed": false,
+          "id": 108,
+          "panels": []
+        },
+        {
+          "id": 33,
+          "title": "Pod CPU Usage",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 0,
+            "y": 65
+          },
+          "targets": [
+            {
+              "expr": "rate(container_cpu_usage_seconds_total{namespace=\"production-retail\",container!=\"\"}[5m])",
+              "legendFormat": "{{pod}} ({{container}})",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "gradientMode": "scheme",
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "pointSize": 5,
+                "showPoints": "never",
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisLabel": "CPU Cores",
+                "scaleDistribution": {
+                  "type": "linear"
+                }
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "mean",
+                "max"
+              ]
+            }
+          }
+        },
+        {
+          "id": 34,
+          "title": "Pod Memory Usage",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 8,
+            "y": 65
+          },
+          "targets": [
+            {
+              "expr": "container_memory_working_set_bytes{namespace=\"production-retail\",container!=\"\"}",
+              "legendFormat": "{{pod}} ({{container}})",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "gradientMode": "scheme",
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "pointSize": 5,
+                "showPoints": "never",
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisLabel": "Memory",
+                "scaleDistribution": {
+                  "type": "linear"
+                }
+              },
+              "unit": "bytes"
+            },
+            "overrides": []
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "mean",
+                "max"
+              ]
+            }
+          }
+        },
+        {
+          "id": 35,
+          "title": "Deployment Replica Health",
+          "type": "table",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 0,
+            "y": 72
+          },
+          "targets": [
+            {
+              "expr": "kube_deployment_status_replicas_available{namespace=\"production-retail\"}",
+              "legendFormat": "",
+              "refId": "A",
+              "instant": true,
+              "format": "table"
+            },
+            {
+              "expr": "kube_deployment_spec_replicas{namespace=\"production-retail\"}",
+              "legendFormat": "",
+              "refId": "B",
+              "instant": true,
+              "format": "table"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Value #A"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Available"
+                  },
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Value #B"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Desired"
+                  },
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "blue",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Time"
+                },
+                "properties": [
+                  {
+                    "id": "custom.hidden",
+                    "value": true
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "namespace"
+                },
+                "properties": [
+                  {
+                    "id": "custom.hidden",
+                    "value": true
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "showHeader": true,
+            "sortBy": [
+              {
+                "displayName": "Desired",
+                "desc": true
+              }
+            ],
+            "footer": {
+              "show": false
+            }
+          },
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time": true,
+                  "namespace": true
+                },
+                "renameByName": {
+                  "deployment": "Deployment",
+                  "Value #A": "Available",
+                  "Value #B": "Desired"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": 36,
+          "title": "System Load",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 8,
+            "y": 72
+          },
+          "targets": [
+            {
+              "expr": "system_load_average_1m{namespace=\"production-retail\",application=~\"$service\"}",
+              "legendFormat": "{{application}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "gradientMode": "scheme",
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "pointSize": 5,
+                "showPoints": "never",
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisLabel": "Load Average (1m)",
+                "scaleDistribution": {
+                  "type": "linear"
+                }
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "lastNotNull",
+                "mean",
+                "max"
+              ]
+            }
+          }
+        },
+        {
+          "type": "row",
+          "title": "Top Endpoints",
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 78
+          },
+          "collapsed": false,
+          "id": 109,
+          "panels": []
+        },
+        {
+          "id": 37,
+          "title": "Top Endpoints by Request Rate",
+          "type": "table",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 79
+          },
+          "targets": [
+            {
+              "expr": "topk(20, sum(rate(http_server_requests_seconds_count{namespace=\"production-retail\",application=~\"$service\"}[5m])) by (application, method, uri, status))",
+              "legendFormat": "",
+              "refId": "A",
+              "instant": true,
+              "format": "table"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps",
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "green"
+                  },
+                  {
+                    "value": 10,
+                    "color": "yellow"
+                  },
+                  {
+                    "value": 100,
+                    "color": "red"
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Value"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Req/sec"
+                  },
+                  {
+                    "id": "unit",
+                    "value": "reqps"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "method"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Method"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "uri"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Endpoint"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "application"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Service"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "status"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Status"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Time"
+                },
+                "properties": [
+                  {
+                    "id": "custom.hidden",
+                    "value": true
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "namespace"
+                },
+                "properties": [
+                  {
+                    "id": "custom.hidden",
+                    "value": true
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "showHeader": true,
+            "sortBy": [
+              {
+                "displayName": "Req/sec",
+                "desc": true
+              }
+            ],
+            "footer": {
+              "show": false
+            }
+          },
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time": true,
+                  "namespace": true
+                },
+                "renameByName": {
+                  "application": "Service",
+                  "method": "Method",
+                  "uri": "Endpoint",
+                  "status": "Status",
+                  "Value": "Req/sec"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "schemaVersion": 39
+    }

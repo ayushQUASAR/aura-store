@@ -1,0 +1,47 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: history-service
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:postgres-service}:5432/${POSTGRES_DB:retail_db}
+    username: ${POSTGRES_USER:retail_user}
+    password: ${POSTGRES_PASSWORD:retail_pass}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # Kafka Consumer config
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVERS:kafka-service:9092}
+    consumer:
+      group-id: history-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+# Telemetry Configuration for Prometheus
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus
+  endpoint:
+    prometheus:
+      enabled: true
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://jaeger-collector.istio-system:4318/v1/traces

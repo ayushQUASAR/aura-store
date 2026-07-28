@@ -1,0 +1,184 @@
+name: Build and Push Images
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      services:
+        description: 'Comma-separated services to build (leave empty for all changed)'
+        required: false
+        default: ''
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      api-gateway: ${{ steps.changes.outputs.api-gateway }}
+      auth-service: ${{ steps.changes.outputs.auth-service }}
+      catalog-service: ${{ steps.changes.outputs.catalog-service }}
+      order-service: ${{ steps.changes.outputs.order-service }}
+      history-service: ${{ steps.changes.outputs.history-service }}
+      storefront: ${{ steps.changes.outputs.storefront }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect changed services
+        id: changes
+        run: |
+          if [ -n "${{ github.event.inputs.services }}" ]; then
+            IFS=',' read -ra SVCS <<< "${{ github.event.inputs.services }}"
+            for svc in "${SVCS[@]}"; do
+              echo "${svc}=true" >> $GITHUB_OUTPUT
+            done
+          else
+            # Check path-based changes
+            CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+
+            echo "api-gateway=$(echo "$CHANGED" | grep -q 'microservices/api-gateway/' && echo true || echo false)" >> $GITHUB_OUTPUT
+            echo "auth-service=$(echo "$CHANGED" | grep -q 'microservices/auth-service/' && echo true || echo false)" >> $GITHUB_OUTPUT
+            echo "catalog-service=$(echo "$CHANGED" | grep -q 'microservices/catalog-service/' && echo true || echo false)" >> $GITHUB_OUTPUT
+            echo "order-service=$(echo "$CHANGED" | grep -q 'microservices/order-service/' && echo true || echo false)" >> $GITHUB_OUTPUT
+            echo "history-service=$(echo "$CHANGED" | grep -q 'microservices/history-service/' && echo true || echo false)" >> $GITHUB_OUTPUT
+            echo "storefront=$(echo "$CHANGED" | grep -qv 'microservices/' && echo true || echo false)" >> $GITHUB_OUTPUT
+          fi
+
+  build-java-services:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - service: api-gateway
+            context: microservices/api-gateway
+            java: true
+            port: "8080"
+          - service: auth-service
+            context: microservices/auth-service
+            java: true
+            port: "8081"
+          - service: catalog-service
+            context: microservices/catalog-service
+            java: true
+            port: "8082"
+          - service: order-service
+            context: microservices/order-service
+            java: true
+            port: "8083"
+          - service: history-service
+            context: microservices/history-service
+            java: true
+            port: "8084"
+    steps:
+      - name: Check if service changed
+        id: check
+        run: echo "changed=${{ needs.detect-changes.outputs[format('{0}', matrix.service)] }}" >> $GITHUB_OUTPUT
+
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.changed == 'true'
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        if: steps.check.outputs.changed == 'true'
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build with Maven
+        if: steps.check.outputs.changed == 'true'
+        working-directory: ${{ matrix.context }}
+        run: mvn clean package -DskipTests -B
+
+      - name: Log in to ghcr.io
+        if: steps.check.outputs.changed == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        if: steps.check.outputs.changed == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:${{ github.sha }}
+            ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-storefront:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if storefront changed
+        id: check
+        run: echo "changed=${{ needs.detect-changes.outputs.storefront }}" >> $GITHUB_OUTPUT
+
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.changed == 'true'
+
+      - name: Log in to ghcr.io
+        if: steps.check.outputs.changed == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        if: steps.check.outputs.changed == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}/storefront:${{ github.sha }}
+            ${{ env.IMAGE_PREFIX }}/storefront:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  update-deploy-repo:
+    needs: [detect-changes, build-java-services, build-storefront]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ayushQuasar/aura-store-deployments
+          token: ${{ secrets.DEPLOY_TOKEN }}
+
+      - name: Install kustomize
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+
+      - name: Update image tags
+        run: |
+          TAG="${{ github.sha }}"
+          SERVICES="api-gateway auth-service catalog-service order-service history-service storefront"
+
+          for svc in $SERVICES; do
+            CHANGED="${{ needs.detect-changes.outputs[format('{0}', $svc) }}"
+            if [ "$CHANGED" = "true" ]; then
+              echo "Updating ${svc} -> ${TAG}"
+              cd base/${svc}
+              kustomize edit set image "ghcr.io/${{ github.repository_owner }}/${svc}=ghcr.io/${{ github.repository_owner }}/${svc}:${TAG}"
+              cd ../..
+            fi
+          done
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "chore: update image tags to ${{ github.sha }}"
+          git push

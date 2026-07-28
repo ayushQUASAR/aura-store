@@ -1,0 +1,53 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: catalog-service
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:postgres-service}:5432/${POSTGRES_DB:retail_db}
+    username: ${POSTGRES_USER:retail_user}
+    password: ${POSTGRES_PASSWORD:retail_pass}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # Redis config for Caching Catalog Queries
+  data:
+    redis:
+      host: ${REDIS_HOST:redis-service}
+      port: ${REDIS_PORT:6379}
+  cache:
+    type: redis
+
+  # Kafka config for event-driven telemetry
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVERS:kafka-service:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+# Telemetry Configuration for Prometheus
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus
+  endpoint:
+    prometheus:
+      enabled: true
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://jaeger-collector.istio-system:4318/v1/traces

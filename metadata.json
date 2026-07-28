@@ -1,0 +1,6 @@
+{
+  "name": "Microservice eCommerce Platform",
+  "description": "A comprehensive, high-performance eCommerce application featuring a React-based frontend and a complete Java Spring Boot microservices architecture with PostgreSQL, Redis, Kafka, Prometheus metrics, and Kubernetes deployment manifests.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

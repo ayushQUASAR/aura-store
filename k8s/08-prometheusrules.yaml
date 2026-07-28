@@ -1,0 +1,64 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: aurastore-alerts
+  namespace: production-retail
+  labels:
+    release: rancher-monitoring
+    role: alert-rules
+spec:
+  groups:
+    - name: aurastore.services
+      rules:
+        - alert: AuraStoreServiceDown
+          expr: up{namespace="production-retail"} == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "AuraStore service {{ $labels.instance }} is down"
+            description: "{{ $labels.job }} in namespace {{ $labels.namespace }} has been down for more than 2 minutes."
+
+        - alert: AuraStoreHighErrorRate
+          expr: |
+            (
+              sum(rate(http_server_requests_seconds_count{namespace="production-retail", status=~"5.."}[5m])) by (application)
+              /
+              sum(rate(http_server_requests_seconds_count{namespace="production-retail"}[5m])) by (application)
+            ) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High error rate on {{ $labels.application }}"
+            description: "{{ $labels.application }} has >5% error rate for 5 minutes."
+
+        - alert: AuraStoreHighLatency
+          expr: |
+            histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{namespace="production-retail"}[5m])) by (application, le)) > 2
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High latency on {{ $labels.application }}"
+            description: "{{ $labels.application }} p95 latency is above 2 seconds."
+
+        - alert: AuraStoreHighMemoryUsage
+          expr: |
+            (jvm_memory_used_bytes{namespace="production-retail", area="heap"} / jvm_memory_max_bytes{namespace="production-retail", area="heap"}) > 0.85
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High heap usage on {{ $labels.application }}"
+            description: "{{ $labels.application }} heap usage is above 85%."
+
+        - alert: AuraStoreHighCPU
+          expr: |
+            sum(rate(process_cpu_seconds_total{namespace="production-retail"}[5m])) by (application) > 0.8
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High CPU on {{ $labels.application }}"
+            description: "{{ $labels.application }} CPU usage is above 80% for 10 minutes."

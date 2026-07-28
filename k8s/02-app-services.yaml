@@ -1,0 +1,295 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: production-retail
+  labels:
+    app: auth-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      containers:
+        - name: auth-service
+          image: 10.10.10.2:31771/auth-service:latest
+          ports:
+            - containerPort: 8081
+          env:
+            - name: POSTGRES_HOST
+              value: "postgres-service"
+            - name: POSTGRES_DB
+              value: "retail_db"
+            - name: POSTGRES_USER
+              value: "retail_user"
+            - name: POSTGRES_PASSWORD
+              value: "retail_pass"
+            - name: JWT_SECRET
+              value: "AuraStoreSecretKey2026!SecureJWTToken_HMACSHA256"
+          resources:
+            requests:
+              cpu: 150m
+              memory: 384Mi
+            limits:
+              cpu: 400m
+              memory: 512Mi
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            failureThreshold: 20
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: production-retail
+  labels:
+    app: auth-service
+spec:
+  ports:
+    - name: http
+      port: 8081
+      targetPort: 8081
+  selector:
+    app: auth-service
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog-service
+  namespace: production-retail
+  labels:
+    app: catalog-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: catalog-service
+  template:
+    metadata:
+      labels:
+        app: catalog-service
+    spec:
+      containers:
+        - name: catalog-service
+          image: 10.10.10.2:31771/catalog-service:latest
+          ports:
+            - containerPort: 8082
+          env:
+            - name: POSTGRES_HOST
+              value: "postgres-service"
+            - name: POSTGRES_DB
+              value: "retail_db"
+            - name: POSTGRES_USER
+              value: "retail_user"
+            - name: POSTGRES_PASSWORD
+              value: "retail_pass"
+            - name: REDIS_HOST
+              value: "redis-service"
+            - name: KAFKA_SERVERS
+              value: "kafka-service:9092"
+          resources:
+            requests:
+              cpu: 150m
+              memory: 384Mi
+            limits:
+              cpu: 400m
+              memory: 512Mi
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            failureThreshold: 20
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalog-service
+  namespace: production-retail
+  labels:
+    app: catalog-service
+spec:
+  ports:
+    - name: http
+      port: 8082
+      targetPort: 8082
+  selector:
+    app: catalog-service
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: production-retail
+  labels:
+    app: order-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      containers:
+        - name: order-service
+          image: 10.10.10.2:31771/order-service:latest
+          ports:
+            - containerPort: 8083
+          env:
+            - name: POSTGRES_HOST
+              value: "postgres-service"
+            - name: POSTGRES_DB
+              value: "retail_db"
+            - name: POSTGRES_USER
+              value: "retail_user"
+            - name: POSTGRES_PASSWORD
+              value: "retail_pass"
+            - name: KAFKA_SERVERS
+              value: "kafka-service:9092"
+            - name: JWT_SECRET
+              value: "AuraStoreSecretKey2026!SecureJWTToken_HMACSHA256"
+          resources:
+            requests:
+              cpu: 150m
+              memory: 384Mi
+            limits:
+              cpu: 400m
+              memory: 512Mi
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8083
+            failureThreshold: 20
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8083
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8083
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: production-retail
+  labels:
+    app: order-service
+spec:
+  ports:
+    - name: http
+      port: 8083
+      targetPort: 8083
+  selector:
+    app: order-service
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: history-service
+  namespace: production-retail
+  labels:
+    app: history-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: history-service
+  template:
+    metadata:
+      labels:
+        app: history-service
+    spec:
+      containers:
+        - name: history-service
+          image: 10.10.10.2:31771/history-service:latest
+          ports:
+            - containerPort: 8084
+          env:
+            - name: POSTGRES_HOST
+              value: "postgres-service"
+            - name: POSTGRES_DB
+              value: "retail_db"
+            - name: POSTGRES_USER
+              value: "retail_user"
+            - name: POSTGRES_PASSWORD
+              value: "retail_pass"
+            - name: KAFKA_SERVERS
+              value: "kafka-service:9092"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 300m
+              memory: 512Mi
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8084
+            failureThreshold: 20
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8084
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8084
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: history-service
+  namespace: production-retail
+  labels:
+    app: history-service
+spec:
+  ports:
+    - name: http
+      port: 8084
+      targetPort: 8084
+  selector:
+    app: history-service
+  type: ClusterIP

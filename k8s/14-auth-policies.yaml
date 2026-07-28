@@ -1,0 +1,121 @@
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-api-gateway-to-catalog
+  namespace: production-retail
+spec:
+  selector:
+    matchLabels:
+      app: catalog-service
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/production-retail/sa/api-gateway"
+      to:
+        - operation:
+            methods: ["GET", "POST", "PUT", "DELETE"]
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-api-gateway-to-order
+  namespace: production-retail
+spec:
+  selector:
+    matchLabels:
+      app: order-service
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/production-retail/sa/api-gateway"
+      to:
+        - operation:
+            methods: ["GET", "POST", "PUT", "DELETE"]
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-api-gateway-to-auth
+  namespace: production-retail
+spec:
+  selector:
+    matchLabels:
+      app: auth-service
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/production-retail/sa/api-gateway"
+      to:
+        - operation:
+            methods: ["GET", "POST"]
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-api-gateway-to-history
+  namespace: production-retail
+spec:
+  selector:
+    matchLabels:
+      app: history-service
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/production-retail/sa/api-gateway"
+      to:
+        - operation:
+            methods: ["GET"]
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-order-to-kafka
+  namespace: production-retail
+spec:
+  selector:
+    matchLabels:
+      app: kafka
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/production-retail/sa/order-service"
+      to:
+        - operation:
+            ports: ["9092"]
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-history-to-kafka
+  namespace: production-retail
+spec:
+  selector:
+    matchLabels:
+      app: kafka
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/production-retail/sa/history-service"
+      to:
+        - operation:
+            ports: ["9092"]
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-all-to-default-sa
+  namespace: production-retail
+spec:
+  {}

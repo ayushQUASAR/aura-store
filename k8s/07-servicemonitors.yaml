@@ -1,0 +1,104 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: aurastore-auth-service
+  namespace: production-retail
+  labels:
+    release: rancher-monitoring
+    app: auth-service
+spec:
+  namespaceSelector:
+    matchNames:
+      - production-retail
+  selector:
+    matchLabels:
+      app: auth-service
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 15s
+      scrapeTimeout: 10s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: aurastore-catalog-service
+  namespace: production-retail
+  labels:
+    release: rancher-monitoring
+    app: catalog-service
+spec:
+  namespaceSelector:
+    matchNames:
+      - production-retail
+  selector:
+    matchLabels:
+      app: catalog-service
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 15s
+      scrapeTimeout: 10s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: aurastore-order-service
+  namespace: production-retail
+  labels:
+    release: rancher-monitoring
+    app: order-service
+spec:
+  namespaceSelector:
+    matchNames:
+      - production-retail
+  selector:
+    matchLabels:
+      app: order-service
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 15s
+      scrapeTimeout: 10s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: aurastore-history-service
+  namespace: production-retail
+  labels:
+    release: rancher-monitoring
+    app: history-service
+spec:
+  namespaceSelector:
+    matchNames:
+      - production-retail
+  selector:
+    matchLabels:
+      app: history-service
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 15s
+      scrapeTimeout: 10s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: aurastore-api-gateway
+  namespace: production-retail
+  labels:
+    release: rancher-monitoring
+    app: api-gateway
+spec:
+  namespaceSelector:
+    matchNames:
+      - production-retail
+  selector:
+    matchLabels:
+      app: api-gateway
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 15s
+      scrapeTimeout: 10s

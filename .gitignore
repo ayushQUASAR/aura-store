@@ -1,0 +1,19 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Docker image tarballs
+storefront images/
+
+# Maven build output
+target/
+
+# Maven build output
+target/
+# Docker image tarballs
+storefront images/

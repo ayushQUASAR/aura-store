@@ -1,0 +1,72 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+      routes:
+        # Route 1: Authentication Service
+        - id: auth-service-route
+          uri: http://auth-service:8081
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=0
+
+        # Route 2: Catalog Management Service
+        - id: catalog-service-route
+          uri: http://catalog-service:8082
+          predicates:
+            - Path=/api/catalog/**
+          filters:
+            - StripPrefix=2
+
+        # Route 3: Order Fulfilment Service
+        - id: order-service-route
+          uri: http://order-service:8083
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - StripPrefix=0
+
+        # Route 4: Order History Service
+        - id: history-service-route
+          uri: http://history-service:8084
+          predicates:
+            - Path=/api/history/**
+          filters:
+            - StripPrefix=0
+
+# Telemetry Configuration for Prometheus
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus
+  endpoint:
+    prometheus:
+      enabled: true
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://jaeger-collector.istio-system:4318/v1/traces
