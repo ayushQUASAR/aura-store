@@ -111,8 +111,6 @@ jobs:
           tags: |
             ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:${{ github.sha }}
             ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
   build-storefront:
     needs: detect-changes
@@ -142,8 +140,6 @@ jobs:
           tags: |
             ${{ env.IMAGE_PREFIX }}/storefront:${{ github.sha }}
             ${{ env.IMAGE_PREFIX }}/storefront:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
   update-deploy-repo:
     needs: [detect-changes, build-java-services, build-storefront]
