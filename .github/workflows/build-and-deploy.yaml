@@ -104,13 +104,15 @@ jobs:
 
       - name: Build and push Docker image
         if: steps.check.outputs.changed == 'true'
-        uses: docker/build-push-action@v5
-        with:
-          context: ${{ matrix.context }}
-          push: true
-          tags: |
-            ghcr.io/ayushquasar/${{ matrix.service }}:${{ github.sha }}
-            ghcr.io/ayushquasar/${{ matrix.service }}:latest
+        run: |
+          TAG="${{ github.sha }}"
+          SVC="${{ matrix.service }}"
+          OWNER="${{ github.repository_owner }}"
+          docker build -t "ghcr.io/${OWNER}/${SVC}:${TAG}" \
+                       -t "ghcr.io/${OWNER}/${SVC}:latest" \
+                       "${{ matrix.context }}"
+          docker push "ghcr.io/${OWNER}/${SVC}:${TAG}"
+          docker push "ghcr.io/${OWNER}/${SVC}:latest"
 
   build-storefront:
     needs: detect-changes
@@ -133,13 +135,14 @@ jobs:
 
       - name: Build and push Docker image
         if: steps.check.outputs.changed == 'true'
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
-            ghcr.io/ayushquasar/storefront:${{ github.sha }}
-            ghcr.io/ayushquasar/storefront:latest
+        run: |
+          TAG="${{ github.sha }}"
+          OWNER="${{ github.repository_owner }}"
+          docker build -t "ghcr.io/${OWNER}/storefront:${TAG}" \
+                       -t "ghcr.io/${OWNER}/storefront:latest" \
+                       .
+          docker push "ghcr.io/${OWNER}/storefront:${TAG}"
+          docker push "ghcr.io/${OWNER}/storefront:latest"
 
   update-deploy-repo:
     needs: [detect-changes, build-java-services, build-storefront]
@@ -172,8 +175,7 @@ jobs:
             if [ "${SVC_MAP[$svc]}" = "true" ]; then
               echo "Updating ${svc} -> ${TAG}"
               cd "base/${svc}"
-              OWNER_LOWER=$(echo "${OWNER}" | tr '[:upper:]' '[:lower:]')
-              kustomize edit set image "ghcr.io/${OWNER_LOWER}/${svc}=ghcr.io/${OWNER_LOWER}/${svc}:${TAG}"
+              kustomize edit set image "ghcr.io/${OWNER}/${svc}=ghcr.io/${OWNER}/${svc}:${TAG}"
               cd "${GITHUB_WORKSPACE}"
             fi
           done
