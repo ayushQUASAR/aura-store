@@ -114,11 +114,11 @@ jobs:
           TAG="${{ github.sha }}"
           SVC="${{ matrix.service }}"
           OWNER="${{ github.repository_owner }}"
-          docker build -t "ghcr.io/${OWNER}/${SVC}:${TAG}" \
-                       -t "ghcr.io/${OWNER}/${SVC}:latest" \
+          docker build -t "ghcr.io/ayushquasar/${SVC}:${TAG}" \
+                       -t "ghcr.io/ayushquasar/${SVC}:latest" \
                        "${{ matrix.context }}"
-          docker push "ghcr.io/${OWNER}/${SVC}:${TAG}"
-          docker push "ghcr.io/${OWNER}/${SVC}:latest"
+          docker push "ghcr.io/ayushquasar/${SVC}:${TAG}"
+          docker push "ghcr.io/ayushquasar/${SVC}:latest"
 
   build-storefront:
     needs: detect-changes
@@ -146,11 +146,11 @@ jobs:
         run: |
           TAG="${{ github.sha }}"
           OWNER="${{ github.repository_owner }}"
-          docker build -t "ghcr.io/${OWNER}/storefront:${TAG}" \
-                       -t "ghcr.io/${OWNER}/storefront:latest" \
+          docker build -t "ghcr.io/ayushquasar/storefront:${TAG}" \
+                       -t "ghcr.io/ayushquasar/storefront:latest" \
                        .
-          docker push "ghcr.io/${OWNER}/storefront:${TAG}"
-          docker push "ghcr.io/${OWNER}/storefront:latest"
+          docker push "ghcr.io/ayushquasar/storefront:${TAG}"
+          docker push "ghcr.io/ayushquasar/storefront:latest"
 
   update-deploy-repo:
     needs: [detect-changes, build-java-services, build-storefront]
@@ -183,7 +183,7 @@ jobs:
             if [ "${SVC_MAP[$svc]}" = "true" ]; then
               echo "Updating ${svc} -> ${TAG}"
               cd "base/${svc}"
-              kustomize edit set image "ghcr.io/${OWNER}/${svc}=ghcr.io/${OWNER}/${svc}:${TAG}"
+              kustomize edit set image "ghcr.io/ayushquasar/${svc}=ghcr.io/ayushquasar/${svc}:${TAG}"
               cd "${GITHUB_WORKSPACE}"
             fi
           done
