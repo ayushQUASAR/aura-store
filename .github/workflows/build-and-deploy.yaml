@@ -247,8 +247,8 @@ jobs:
       - name: Install Trivy
         uses: aquasecurity/trivy-action@master
         with:
-          scan-type: 'image'
-          scan-ref: 'ghcr.io/ayushquasar/api-gateway:${{ github.sha }}'
+          scan-type: 'fs'
+          scan-ref: '.'
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'HIGH,CRITICAL'
@@ -403,14 +403,15 @@ jobs:
           sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
           rm argocd-linux-amd64
 
+      - name: Resolve ArgoCD hostname
+        run: echo "10.10.10.6 argocd.cris-atoms.local" | sudo tee -a /etc/hosts
+
       - name: Sync ArgoCD applications
         env:
           ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
-          http_proxy: ""
-          https_proxy: ""
-          no_proxy: "*"
         run: |
+          unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY no_proxy NO_PROXY
           argocd login "$ARGOCD_SERVER" --auth-token "$ARGOCD_AUTH_TOKEN" --insecure
           for app in aurastore-apps aurastore-infrastructure aurastore-istio aurastore-monitoring; do
             echo "Syncing $app..."
@@ -455,10 +456,9 @@ jobs:
         env:
           ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
-          http_proxy: ""
-          https_proxy: ""
-          no_proxy: "*"
         run: |
+          unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY no_proxy NO_PROXY
+          echo "10.10.10.6 argocd.cris-atoms.local" | sudo tee -a /etc/hosts
           argocd login "$ARGOCD_SERVER" --auth-token "$ARGOCD_AUTH_TOKEN" --insecure
           for app in aurastore-apps aurastore-infrastructure aurastore-istio aurastore-monitoring; do
             echo "Rolling back $app..."
