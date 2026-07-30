@@ -404,7 +404,7 @@ jobs:
           unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY no_proxy NO_PROXY
           AUTH="Authorization: Bearer ${ARGOCD_AUTH_TOKEN}"
           API="https://argocd.cris-atoms.local/api/v1"
-          RESOLVE="--resolve argocd.cris-atoms.local:443:10.10.10.6"
+          RESOLVE="--resolve argocd.cris-atoms.local:443:10.10.10.10"
 
           for app in aurastore-apps aurastore-infrastructure aurastore-istio aurastore-monitoring; do
             echo "Syncing $app..."
@@ -451,7 +451,7 @@ jobs:
           unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY no_proxy NO_PROXY
           AUTH="Authorization: Bearer ${ARGOCD_AUTH_TOKEN}"
           API="https://argocd.cris-atoms.local/api/v1"
-          RESOLVE="--resolve argocd.cris-atoms.local:443:10.10.10.6"
+          RESOLVE="--resolve argocd.cris-atoms.local:443:10.10.10.10"
 
           for app in aurastore-apps aurastore-infrastructure aurastore-istio aurastore-monitoring; do
             echo "Rolling back $app..."
