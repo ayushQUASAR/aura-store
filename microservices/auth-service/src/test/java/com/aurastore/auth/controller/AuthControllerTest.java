@@ -2,6 +2,7 @@ package com.aurastore.auth.controller;
 
 import com.aurastore.auth.domain.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -28,6 +29,9 @@ class AuthControllerTest {
 
     @MockBean
     private UserRepository userRepository;
+
+    @MockBean
+    private MeterRegistry meterRegistry;
 
     @Test
     void register_withMissingEmail_returnsBadRequest() throws Exception {
