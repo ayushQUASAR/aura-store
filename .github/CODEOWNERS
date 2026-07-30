@@ -1,0 +1,26 @@
+# CODEOWNERS - Defines who owns what for required reviews
+
+# Global owners - required for all PRs
+* @ayushQUASAR
+
+# Java services
+/microservices/api-gateway/ @ayushQUASAR
+/microservices/auth-service/ @ayushQUASAR
+/microservices/catalog-service/ @ayushQUASAR
+/microservices/order-service/ @ayushQUASAR
+/microservices/history-service/ @ayushQUASAR
+
+# Storefront
+/src/ @ayushQUASAR
+/package.json @ayushQUASAR
+/vite.config.ts @ayushQUASAR
+
+# CI/CD
+/.github/workflows/ @ayushQUASAR
+/.github/dependabot.yml @ayushQUASAR
+
+# Kubernetes/ArgoCD
+/aura-store-deployments/ @ayushQUASAR
+
+# Documentation
+/README.md @ayushQUASAR
