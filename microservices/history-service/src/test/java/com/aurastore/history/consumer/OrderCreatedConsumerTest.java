@@ -66,7 +66,7 @@ class OrderCreatedConsumerTest {
     }
 
     @Test
-    void consumeOrderStatusUpdate_noPreviousHistory_doesNotSave() {
+    void consumeOrderStatusUpdate_noPreviousHistory_stillSaves() {
         when(orderHistoryRepository.findByOrderIdOrderByEventTimeDesc(1L))
                 .thenReturn(java.util.List.of());
 
@@ -74,6 +74,12 @@ class OrderCreatedConsumerTest {
                 "{\"orderId\": 1, \"status\": \"SHIPPED\"}");
 
         consumer.consumeOrderStatusUpdate(record);
-        verify(orderHistoryRepository, never()).save(any());
+
+        verify(orderHistoryRepository).save(historyCaptor.capture());
+        OrderHistory saved = historyCaptor.getValue();
+        assertEquals(1L, saved.getOrderId());
+        assertEquals("STATUS_UPDATE", saved.getAction());
+        assertEquals("SHIPPED", saved.getStatus());
+        assertNull(saved.getUserEmail());
     }
 }
