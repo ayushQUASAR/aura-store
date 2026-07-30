@@ -1,5 +1,5 @@
 # Multi-Stage Build: Stage 1 - Build the React + Express storefront application
-FROM node:20-bookworm AS builder
+FROM node:26-bookworm AS builder
 WORKDIR /app
 
 # Copy dependency configuration
@@ -16,7 +16,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Minimalist Production Image
-FROM node:20-bookworm-slim
+FROM node:26-bookworm-slim
 WORKDIR /app
 
 # Copy dependency configuration
