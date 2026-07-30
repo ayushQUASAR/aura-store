@@ -266,6 +266,8 @@ jobs:
     if: failure()
     runs-on: ubuntu-latest
     steps:
+      - name: Set short SHA
+        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
       - name: Send Slack notification
         if: env.SLACK_WEBHOOK_URL != ''
         uses: slackapi/slack-github-action@v1.26.0
@@ -277,7 +279,7 @@ jobs:
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "*AuraStore Build/Test Failed*\\nRepository: ${{ github.repository }}\\nBranch: ${{ github.ref_name }}\\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|`${{ github.sha[0:7] }}`>\\nRun: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
+                  "text": "*AuraStore Build/Test Failed*\\nRepository: ${{ github.repository }}\\nBranch: ${{ github.ref_name }}\\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|`${{ env.SHORT_SHA }}`>\\nRun: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
                 }
               }]
             }
@@ -298,6 +300,8 @@ jobs:
     if: failure()
     runs-on: ubuntu-latest
     steps:
+      - name: Set short SHA
+        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
       - name: Send deploy failure alert
         if: env.SLACK_WEBHOOK_URL != ''
         uses: slackapi/slack-github-action@v1.26.0
@@ -309,7 +313,7 @@ jobs:
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "*AuraStore Deployment Failed*\\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|`${{ github.sha[0:7] }}`>\\nPipeline passed build stage but failed during deployment or smoke tests\\nRun: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>\\nArgoCD: <https://argocd.cris-atoms.local|Check ArgoCD>"
+                  "text": "*AuraStore Deployment Failed*\\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|`${{ env.SHORT_SHA }}`>\\nPipeline passed build stage but failed during deployment or smoke tests\\nRun: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>\\nArgoCD: <https://argocd.cris-atoms.local|Check ArgoCD>"
                 }
               }]
             }
@@ -473,6 +477,8 @@ jobs:
     if: success()
     runs-on: ubuntu-latest
     steps:
+      - name: Set short SHA
+        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
       - name: Send success notification
         if: env.SLACK_WEBHOOK_URL != ''
         uses: slackapi/slack-github-action@v1.26.0
@@ -485,7 +491,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*AuraStore Deployed Successfully*\\nRepository: ${{ github.repository }}\\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|`${{ github.sha[0:7] }}`>\\nEnvironment: Production\\nArgoCD: <https://argocd.cris-atoms.local|Open ArgoCD>\\nRun: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
+                    "text": "*AuraStore Deployed Successfully*\\nRepository: ${{ github.repository }}\\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|`${{ env.SHORT_SHA }}`>\\nEnvironment: Production\\nArgoCD: <https://argocd.cris-atoms.local|Open ArgoCD>\\nRun: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
                   }
                 }
               ]
