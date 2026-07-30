@@ -501,7 +501,7 @@ jobs:
 
   qodana-report:
     needs: qodana
-    if: success() && secrets.QODANA_TOKEN != ''
+    if: success()
     runs-on: ubuntu-latest
     steps:
       - name: Notify Qodana results
