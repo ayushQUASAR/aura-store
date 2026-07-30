@@ -3,11 +3,12 @@ package com.aurastore.history.controller;
 import com.aurastore.history.domain.OrderHistory;
 import com.aurastore.history.domain.OrderHistoryRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -17,6 +18,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(HistoryController.class)
+@Import(SimpleMeterRegistry.class)
 class HistoryControllerTest {
 
     @Autowired
@@ -24,9 +26,6 @@ class HistoryControllerTest {
 
     @MockBean
     private OrderHistoryRepository orderHistoryRepository;
-
-    @MockBean
-    private MeterRegistry meterRegistry;
 
     @Test
     void getHistoryByEmail_returnsList() throws Exception {
