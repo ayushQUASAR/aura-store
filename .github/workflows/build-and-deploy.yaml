@@ -248,7 +248,7 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'image'
-          scan-ref: 'ghcr.io/ayushquasar/*:${{ github.sha }}'
+          scan-ref: 'ghcr.io/ayushquasar/api-gateway:${{ github.sha }}'
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'HIGH,CRITICAL'
@@ -407,6 +407,7 @@ jobs:
         env:
           ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
+          NO_PROXY: argocd.cris-atoms.local
         run: |
           argocd login "$ARGOCD_SERVER" --auth-token "$ARGOCD_AUTH_TOKEN" --insecure
           for app in aurastore-apps aurastore-infrastructure aurastore-istio aurastore-monitoring; do
@@ -443,10 +444,16 @@ jobs:
     if: failure()
     runs-on: ubuntu-latest
     steps:
+      - name: Install argocd CLI
+        run: |
+          curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+          rm argocd-linux-amd64
       - name: Trigger ArgoCD rollback to previous version
         env:
           ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
+          NO_PROXY: argocd.cris-atoms.local
         run: |
           argocd login "$ARGOCD_SERVER" --auth-token "$ARGOCD_AUTH_TOKEN" --insecure
           for app in aurastore-apps aurastore-infrastructure aurastore-istio aurastore-monitoring; do
