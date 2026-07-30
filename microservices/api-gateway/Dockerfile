@@ -1,5 +1,5 @@
 # Multi-stage build for the API Gateway service
-FROM maven:3.9.9-eclipse-temurin-17 AS builder
+FROM maven:3.9.15-eclipse-temurin-26 AS builder
 WORKDIR /workspace
 
 # Copy Maven project files
@@ -10,7 +10,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Runtime image
-FROM maven:3.9.9-eclipse-temurin-17
+FROM maven:3.9.15-eclipse-temurin-26
 WORKDIR /app
 
 # Copy the built jar
