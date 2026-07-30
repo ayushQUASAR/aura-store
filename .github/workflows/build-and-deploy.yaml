@@ -411,7 +411,16 @@ jobs:
           ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
         run: |
+          echo "=== Proxy vars before ==="
+          echo "http_proxy=$http_proxy"
+          echo "https_proxy=$https_proxy"
+          echo "HTTP_PROXY=$HTTP_PROXY"
+          echo "HTTPS_PROXY=$HTTPS_PROXY"
           unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY no_proxy NO_PROXY
+          echo "=== Proxy vars after unset ==="
+          echo "http_proxy=$http_proxy"
+          echo "HTTPS_PROXY=$HTTPS_PROXY"
+          echo "=== Running argocd login ==="
           argocd login "$ARGOCD_SERVER" --auth-token "$ARGOCD_AUTH_TOKEN" --insecure
           for app in aurastore-apps aurastore-infrastructure aurastore-istio aurastore-monitoring; do
             echo "Syncing $app..."
@@ -457,7 +466,15 @@ jobs:
           ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
         run: |
+          echo "=== Proxy vars before ==="
+          echo "http_proxy=$http_proxy"
+          echo "https_proxy=$https_proxy"
+          echo "HTTP_PROXY=$HTTP_PROXY"
+          echo "HTTPS_PROXY=$HTTPS_PROXY"
           unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY no_proxy NO_PROXY
+          echo "=== Proxy vars after unset ==="
+          echo "http_proxy=$http_proxy"
+          echo "HTTPS_PROXY=$HTTPS_PROXY"
           echo "10.10.10.6 argocd.cris-atoms.local" | sudo tee -a /etc/hosts
           argocd login "$ARGOCD_SERVER" --auth-token "$ARGOCD_AUTH_TOKEN" --insecure
           for app in aurastore-apps aurastore-infrastructure aurastore-istio aurastore-monitoring; do
