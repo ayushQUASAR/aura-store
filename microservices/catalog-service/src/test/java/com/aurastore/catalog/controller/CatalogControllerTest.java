@@ -126,9 +126,7 @@ class CatalogControllerTest {
 
     @Test
     void deleteProduct_found() throws Exception {
-        when(productRepository.findById(1L)).thenReturn(Optional.of(
-                new Product("Laptop", "Desc", 999.99, "Electronics", "img.jpg", 5)
-        ));
+        when(productRepository.existsById(1L)).thenReturn(true);
 
         mockMvc.perform(delete("/products/1"))
                 .andExpect(status().isOk())
