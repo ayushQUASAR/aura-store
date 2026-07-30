@@ -181,6 +181,7 @@ jobs:
 
   qodana:
     runs-on: ubuntu-latest
+    continue-on-error: true
     permissions:
       contents: write
       pull-requests: write
@@ -198,7 +199,13 @@ jobs:
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
 
+      - name: Upload SARIF to GitHub
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ runner.temp }}/qodana/results/qodana.sarif.json
+
   update-deploy-repo:
+    if: ${{ !cancelled() }}
     needs: [detect-changes, build-java-services, build-storefront]
     runs-on: ubuntu-latest
     steps:
