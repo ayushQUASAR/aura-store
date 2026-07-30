@@ -16,6 +16,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -43,24 +47,24 @@ class CatalogControllerTest {
 
     @Test
     void getAllProducts_returnsList() throws Exception {
-        when(productRepository.findAll()).thenReturn(List.of(
+        when(productRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(
                 new Product("Laptop", "Desc", 999.99, "Electronics", "img.jpg", 5)
-        ));
+        )));
 
         mockMvc.perform(get("/products"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Laptop"));
+                .andExpect(jsonPath("$.content[0].name").value("Laptop"));
     }
 
     @Test
     void getProductsByCategory_filtersResults() throws Exception {
-        when(productRepository.findByCategory("Electronics")).thenReturn(List.of(
+        when(productRepository.findByCategory(any(), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(
                 new Product("Laptop", "Desc", 999.99, "Electronics", "img.jpg", 5)
-        ));
+        )));
 
         mockMvc.perform(get("/products?category=Electronics"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].category").value("Electronics"));
+                .andExpect(jsonPath("$.content[0].category").value("Electronics"));
     }
 
     @Test
