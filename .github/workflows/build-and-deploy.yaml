@@ -33,7 +33,6 @@ env:
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-  ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
 
 jobs:
   detect-changes:
@@ -296,7 +295,7 @@ jobs:
           color: "FF0000"
 
   notify-deploy-failure:
-    needs: [smoke-tests, rollback]
+    needs: [smoke-tests]
     if: failure()
     runs-on: ubuntu-latest
     steps:
@@ -393,30 +392,8 @@ jobs:
           git commit -m "chore: update image tags to ${{ github.sha }}"
           git push
 
-  argocd-sync:
-    needs: update-deploy-repo
-    runs-on: ubuntu-latest
-    steps:
-      - name: Sync ArgoCD applications via API
-        env:
-          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
-        run: |
-          unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY no_proxy NO_PROXY
-          AUTH="Authorization: Bearer ${ARGOCD_AUTH_TOKEN}"
-          API="https://argocd.cris-atoms.local/api/v1"
-          RESOLVE="--resolve argocd.cris-atoms.local:443:10.10.10.10"
-
-          for app in aurastore-apps aurastore-infrastructure aurastore-istio aurastore-monitoring; do
-            echo "Syncing $app..."
-            HTTP_CODE=$(curl -sk --connect-timeout 10 --max-time 60 -o /dev/null -w '%{http_code}' \
-              --noproxy '*' $RESOLVE -X POST "${API}/applications/${app}/sync" \
-              -H "$AUTH" -H "Content-Type: application/json" \
-              -d '{"prune":true}' 2>&1)
-            echo "  HTTP $HTTP_CODE"
-          done
-
   smoke-tests:
-    needs: argocd-sync
+    needs: update-deploy-repo
     runs-on: ubuntu-latest
     steps:
       - name: Wait for rollout
@@ -438,59 +415,6 @@ jobs:
               sleep 5
             done
           done
-
-  rollback:
-    needs: [argocd-sync, smoke-tests]
-    if: failure()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger ArgoCD rollback to previous version
-        env:
-          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
-        run: |
-          unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY no_proxy NO_PROXY
-          AUTH="Authorization: Bearer ${ARGOCD_AUTH_TOKEN}"
-          API="https://argocd.cris-atoms.local/api/v1"
-          RESOLVE="--resolve argocd.cris-atoms.local:443:10.10.10.10"
-
-          for app in aurastore-apps aurastore-infrastructure aurastore-istio aurastore-monitoring; do
-            echo "Rolling back $app..."
-
-            HISTORY=$(curl -sk --connect-timeout 10 --max-time 30 --noproxy '*' $RESOLVE "${API}/applications/${app}" \
-              -H "$AUTH" -H "Content-Type: application/json" 2>/dev/null || echo "{}")
-
-            PREV_ID=$(echo "$HISTORY" | python3 -c "import sys,json;d=json.load(sys.stdin);r=d.get('status',{}).get('history',[]);print(r[-2]['id'] if len(r)>=2 else '')" 2>/dev/null)
-
-            if [ -n "$PREV_ID" ] && [ "$PREV_ID" != "0" ]; then
-              echo "  Rolling back to revision id: $PREV_ID"
-              HTTP_CODE=$(curl -sk --connect-timeout 10 --max-time 60 -o /dev/null -w '%{http_code}' \
-                --noproxy '*' $RESOLVE -X POST "${API}/applications/${app}/rollback" \
-                -H "$AUTH" -H "Content-Type: application/json" \
-                -d "{\"id\":$PREV_ID}" 2>&1)
-              echo "  HTTP $HTTP_CODE"
-            else
-              echo "  No previous revision found, skipping rollback"
-            fi
-            echo ""
-          done
-
-      - name: Notify rollback
-        if: env.SLACK_WEBHOOK_URL != ''
-        uses: slackapi/slack-github-action@v1.26.0
-        with:
-          payload: |
-            {
-              "text": "🔙 *AuraStore Rollback Triggered*",
-              "blocks": [{
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "*AuraStore Rollback Initiated*\\nCommit: ${{ github.sha }}\\nSmoke tests failed - rolling back all ArgoCD apps to previous revision\\nRun: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
-                }
-              }]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
   notify-success:
     needs: [notify-deploy-failure]
