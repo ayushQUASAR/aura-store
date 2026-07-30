@@ -33,10 +33,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-  GRAFANA_URL: ${{ secrets.GRAFANA_URL }}
-  GRAFANA_API_KEY: ${{ secrets.GRAFANA_API_KEY }}
   ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
-  ARGOCD_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
 
 jobs:
   detect-changes:
@@ -296,29 +293,8 @@ deploy-approval:
       - name: Wait for manual approval
         run: echo "Deployment approved - proceeding to update deploy repo"
 
-  grafana-annotate:
-    needs: deploy-approval
-    runs-on: ubuntu-latest
-    steps:
-      - name: Create Grafana annotation
-        if: env.GRAFANA_API_KEY != ''
-        run: |
-          curl -X POST \
-            -H "Authorization: Bearer ${GRAFANA_API_KEY}" \
-            -H "Content-Type: application/json" \
-            -d "{
-              \"time\": $(date +%s)000,
-              \"timeEnd\": $(date +%s)000,
-              \"tags\": [\"deployment\", \"aurastore\", \"${{ github.sha }}\"],
-              \"text\": \"Deployed ${{ github.repository }}@${{ github.sha }} by ${{ github.actor }}\"
-            }" \
-            "${GRAFANA_URL}/api/annotations"
-        env:
-          GRAFANA_API_KEY: ${{ secrets.GRAFANA_API_KEY }}
-          GRAFANA_URL: ${{ secrets.GRAFANA_URL }}
-
   update-deploy-repo:
-    needs: [deploy-approval, grafana-annotate]
+    needs: [deploy-approval]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     steps:
