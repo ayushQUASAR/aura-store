@@ -284,7 +284,7 @@ jobs:
           text: "Repository: ${{ github.repository }}\\nBranch: ${{ github.ref_name }}\\nCommit: ${{ github.sha }}\\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
           color: "FF0000"
 
-deploy-approval:
+  deploy-approval:
     needs: [build-java-services, build-storefront, qodana, trivy-scan]
     if: ${{ github.ref == 'refs/heads/main' && !cancelled() }}
     runs-on: ubuntu-latest
@@ -292,6 +292,24 @@ deploy-approval:
     steps:
       - name: Wait for manual approval
         run: echo "Deployment approved - proceeding to update deploy repo"
+
+      - name: Notify approval pending
+        if: env.SLACK_WEBHOOK_URL != ''
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "text": "⏳ *AuraStore Deploy Pending Approval*",
+              "blocks": [{
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*AuraStore Deployment Awaiting Approval*\\nCommit: ${{ github.sha }}\\nBy: ${{ github.actor }}\\nApprove at: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Open Pipeline>"
+                }
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
   update-deploy-repo:
     needs: [deploy-approval]
@@ -400,6 +418,24 @@ deploy-approval:
             argocd app rollback "$app" --to-revision $(argocd app history "$app" -o json | jq -r '.[1].revision') || true
           done
 
+      - name: Notify rollback
+        if: env.SLACK_WEBHOOK_URL != ''
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "text": "🔙 *AuraStore Rollback Triggered*",
+              "blocks": [{
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*AuraStore Rollback Initiated*\\nCommit: ${{ github.sha }}\\nSmoke tests failed - rolling back all ArgoCD apps to previous revision\\nRun: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
+                }
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
   notify-success:
     needs: [smoke-tests, rollback]
     if: success()
@@ -417,10 +453,33 @@ deploy-approval:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*AuraStore Deployed Successfully*\\nRepository: ${{ github.repository }}\\nCommit: ${{ github.sha }}\\nEnvironment: Production\\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
+                    "text": "*AuraStore Deployed Successfully*\\nRepository: ${{ github.repository }}\\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|`{{ github.sha.substr(0,7) }}`>\\nEnvironment: Production\\nArgoCD: <https://argocd.cris-atoms.local|Open ArgoCD>\\nRun: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
                   }
                 }
               ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  qodana-report:
+    needs: qodana
+    if: success() && env.QODANA_TOKEN != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Qodana results
+        if: env.SLACK_WEBHOOK_URL != ''
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "text": "🔍 *AuraStore Static Analysis Complete*",
+              "blocks": [{
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*Qodana Analysis Complete*\\nCommit: ${{ github.sha }}\\nCheck the SARIF report in the GitHub Security tab"
+                }
+              }]
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
