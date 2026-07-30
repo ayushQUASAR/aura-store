@@ -272,16 +272,14 @@ jobs:
         with:
           payload: |
             {
-              "text": "🚨 *AuraStore Pipeline Failed*",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*AuraStore Pipeline Failed*\\nRepository: ${{ github.repository }}\\nBranch: ${{ github.ref_name }}\\nCommit: ${{ github.sha }}\\nRun: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
-                  }
+              "text": "🚨 *AuraStore Build Failed*",
+              "blocks": [{
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*AuraStore Build/Test Failed*\\nRepository: ${{ github.repository }}\\nBranch: ${{ github.ref_name }}\\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|`${{ github.sha.substr(0,7) }}`>\\nRun: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
                 }
-              ]
+              }]
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -291,9 +289,32 @@ jobs:
         uses: skation/github-action-teams@v2
         with:
           webhook: ${{ secrets.TEAMS_WEBHOOK_URL }}
-          title: "AuraStore Pipeline Failed"
+          title: "AuraStore Build Failed"
           text: "Repository: ${{ github.repository }}\\nBranch: ${{ github.ref_name }}\\nCommit: ${{ github.sha }}\\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
           color: "FF0000"
+
+  notify-deploy-failure:
+    needs: [smoke-tests, rollback]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send deploy failure alert
+        if: env.SLACK_WEBHOOK_URL != ''
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "text": "🔥 *AuraStore Deploy Failed*",
+              "blocks": [{
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*AuraStore Deployment Failed*\\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|`${{ github.sha.substr(0,7) }}`>\\nPipeline passed build stage but failed during deployment or smoke tests\\nRun: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>\\nArgoCD: <https://argocd.cris-atoms.local|Check ArgoCD>"
+                }
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
   deploy-approval:
     needs: [build-java-services, build-storefront, qodana, trivy-scan]
@@ -448,7 +469,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
   notify-success:
-    needs: [smoke-tests, rollback]
+    needs: [notify-deploy-failure]
     if: success()
     runs-on: ubuntu-latest
     steps:
