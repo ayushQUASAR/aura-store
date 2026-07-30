@@ -294,31 +294,6 @@ jobs:
           text: "Repository: ${{ github.repository }}\\nBranch: ${{ github.ref_name }}\\nCommit: ${{ github.sha }}\\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
           color: "FF0000"
 
-  notify-deploy-failure:
-    needs: [smoke-tests]
-    if: failure()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Set short SHA
-        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
-      - name: Send deploy failure alert
-        if: env.SLACK_WEBHOOK_URL != ''
-        uses: slackapi/slack-github-action@v1.26.0
-        with:
-          payload: |
-            {
-              "text": "🔥 *AuraStore Deploy Failed*",
-              "blocks": [{
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "*AuraStore Deployment Failed*\\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|`${{ env.SHORT_SHA }}`>\\nPipeline passed build stage but failed during deployment or smoke tests\\nRun: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>\\nArgoCD: <https://argocd.cris-atoms.local|Check ArgoCD>"
-                }
-              }]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
   deploy-approval:
     needs: [build-java-services, build-storefront, qodana, trivy-scan]
     if: ${{ github.ref == 'refs/heads/main' && !cancelled() }}
@@ -392,32 +367,33 @@ jobs:
           git commit -m "chore: update image tags to ${{ github.sha }}"
           git push
 
-  smoke-tests:
-    needs: update-deploy-repo
+  notify-deploy-failure:
+    needs: [update-deploy-repo]
+    if: failure()
     runs-on: ubuntu-latest
     steps:
-      - name: Wait for rollout
-        run: sleep 60
-
-      - name: Health check endpoints
-        run: |
-          for svc in auth catalog order history api-gateway storefront; do
-            url="https://ecommerce.cris-atoms.local/api/${svc}/actuator/health"
-            if [ "$svc" = "storefront" ]; then
-              url="https://ecommerce.cris-atoms.local"
-            fi
-            echo "Checking $url..."
-            for i in {1..10}; do
-              if curl -sf "$url" > /dev/null; then
-                echo "✓ $svc healthy"
-                break
-              fi
-              sleep 5
-            done
-          done
+      - name: Set short SHA
+        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+      - name: Send deploy failure alert
+        if: env.SLACK_WEBHOOK_URL != ''
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "text": "🔥 *AuraStore Deploy Failed*",
+              "blocks": [{
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*AuraStore Deployment Failed*\\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|`${{ env.SHORT_SHA }}`>\\nPipeline passed build stage but failed during deploy repo update\\nRun: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>\\nArgoCD: <https://argocd.cris-atoms.local|Check ArgoCD>"
+                }
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
   notify-success:
-    needs: [notify-deploy-failure]
+    needs: [update-deploy-repo]
     if: success()
     runs-on: ubuntu-latest
     steps:
