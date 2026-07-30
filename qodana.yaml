@@ -1,0 +1,23 @@
+version: 1.0
+profile:
+  name: qodana.recommended
+linter: jetbrains/qodana-jvm-community:latest
+include:
+  - name: CheckDependencyLicenses
+  - name: ClassStructure
+  - name: CodeStyle
+  - name: ConstantConditions
+  - name: DataFlowIssue
+  - name: Exception
+  - name: JUnit5Issues
+  - name: LoggingIssues
+  - name: NullabilityProblems
+  - name: Performance
+  - name: ProbableBugs
+  - name: ResultOfMethodCallIgnored
+  - name: ThreadingIssues
+  - name: UnusedDeclaration
+  - name: UnusedSymbol
+exclude:
+  - name: UnusedPublicMethod
+  - name: WeakerAccess
