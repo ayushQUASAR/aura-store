@@ -277,7 +277,7 @@ jobs:
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "*AuraStore Build/Test Failed*\\nRepository: ${{ github.repository }}\\nBranch: ${{ github.ref_name }}\\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|`${{ github.sha.substr(0,7) }}`>\\nRun: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
+                  "text": "*AuraStore Build/Test Failed*\\nRepository: ${{ github.repository }}\\nBranch: ${{ github.ref_name }}\\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|`${{ substring(github.sha, 0, 7) }}`>\\nRun: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
                 }
               }]
             }
@@ -309,7 +309,7 @@ jobs:
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "*AuraStore Deployment Failed*\\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|`${{ github.sha.substr(0,7) }}`>\\nPipeline passed build stage but failed during deployment or smoke tests\\nRun: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>\\nArgoCD: <https://argocd.cris-atoms.local|Check ArgoCD>"
+                  "text": "*AuraStore Deployment Failed*\\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|`${{ substring(github.sha, 0, 7) }}`>\\nPipeline passed build stage but failed during deployment or smoke tests\\nRun: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>\\nArgoCD: <https://argocd.cris-atoms.local|Check ArgoCD>"
                 }
               }]
             }
@@ -485,7 +485,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*AuraStore Deployed Successfully*\\nRepository: ${{ github.repository }}\\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|`{{ github.sha.substr(0,7) }}`>\\nEnvironment: Production\\nArgoCD: <https://argocd.cris-atoms.local|Open ArgoCD>\\nRun: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
+                    "text": "*AuraStore Deployed Successfully*\\nRepository: ${{ github.repository }}\\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|`${{ substring(github.sha, 0, 7) }}`>\\nEnvironment: Production\\nArgoCD: <https://argocd.cris-atoms.local|Open ArgoCD>\\nRun: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
                   }
                 }
               ]
