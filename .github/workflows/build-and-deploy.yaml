@@ -400,7 +400,6 @@ jobs:
       - name: Sync ArgoCD applications via API
         env:
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
-        shell: bash
         run: |
           unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY no_proxy NO_PROXY
           AUTH="Authorization: Bearer ${ARGOCD_AUTH_TOKEN}"
@@ -448,7 +447,6 @@ jobs:
       - name: Trigger ArgoCD rollback to previous version
         env:
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
-        shell: bash
         run: |
           unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY no_proxy NO_PROXY
           AUTH="Authorization: Bearer ${ARGOCD_AUTH_TOKEN}"
@@ -458,28 +456,16 @@ jobs:
           for app in aurastore-apps aurastore-infrastructure aurastore-istio aurastore-monitoring; do
             echo "Rolling back $app..."
 
-            # Get revision history and find previous revision
             HISTORY=$(curl -sk --noproxy '*' $RESOLVE "${API}/applications/${app}" \
               -H "$AUTH" -H "Content-Type: application/json")
-            PREV_REV=$(echo "$HISTORY" | python3 -c "
-import sys,json
-d=json.load(sys.stdin)
-revs=d.get('status',{}).get('history',[])
-if len(revs)>=2:
-    print(revs[-2].get('revision',''))
-else:
-    print('')
-" 2>/dev/null)
 
-            if [ -n "$PREV_REV" ]; then
-              echo "  Rolling back to revision: $PREV_REV"
+            PREV_ID=$(echo "$HISTORY" | python3 -c "import sys,json;d=json.load(sys.stdin);r=d.get('status',{}).get('history',[]);print(r[-2]['id'] if len(r)>=2 else '')" 2>/dev/null)
+
+            if [ -n "$PREV_ID" ] && [ "$PREV_ID" != "0" ]; then
+              echo "  Rolling back to revision id: $PREV_ID"
               curl -sk --noproxy '*' $RESOLVE -X POST "${API}/applications/${app}/rollback" \
                 -H "$AUTH" -H "Content-Type: application/json" \
-                -d "{\"id\":$(echo "$HISTORY" | python3 -c "
-import sys,json
-d=json.load(sys.stdin)
-revs=d.get('status',{}).get('history',[])
-print(revs[-2].get('id',0))" 2>/dev/null)}" \
+                -d "{\"id\":$PREV_ID}" \
                 -w '\nHTTP %{http_code}' || true
             else
               echo "  No previous revision found, skipping rollback"
