@@ -408,11 +408,11 @@ jobs:
 
           for app in aurastore-apps aurastore-infrastructure aurastore-istio aurastore-monitoring; do
             echo "Syncing $app..."
-            curl -sk --noproxy '*' $RESOLVE -X POST "${API}/applications/${app}/sync" \
+            HTTP_CODE=$(curl -sk --connect-timeout 10 --max-time 60 -o /dev/null -w '%{http_code}' \
+              --noproxy '*' $RESOLVE -X POST "${API}/applications/${app}/sync" \
               -H "$AUTH" -H "Content-Type: application/json" \
-              -d '{"prune":true}' \
-              -w '\nHTTP %{http_code}' || true
-            echo ""
+              -d '{"prune":true}' 2>&1)
+            echo "  HTTP $HTTP_CODE"
           done
 
   smoke-tests:
@@ -456,17 +456,18 @@ jobs:
           for app in aurastore-apps aurastore-infrastructure aurastore-istio aurastore-monitoring; do
             echo "Rolling back $app..."
 
-            HISTORY=$(curl -sk --noproxy '*' $RESOLVE "${API}/applications/${app}" \
-              -H "$AUTH" -H "Content-Type: application/json")
+            HISTORY=$(curl -sk --connect-timeout 10 --max-time 30 --noproxy '*' $RESOLVE "${API}/applications/${app}" \
+              -H "$AUTH" -H "Content-Type: application/json" 2>/dev/null || echo "{}")
 
             PREV_ID=$(echo "$HISTORY" | python3 -c "import sys,json;d=json.load(sys.stdin);r=d.get('status',{}).get('history',[]);print(r[-2]['id'] if len(r)>=2 else '')" 2>/dev/null)
 
             if [ -n "$PREV_ID" ] && [ "$PREV_ID" != "0" ]; then
               echo "  Rolling back to revision id: $PREV_ID"
-              curl -sk --noproxy '*' $RESOLVE -X POST "${API}/applications/${app}/rollback" \
+              HTTP_CODE=$(curl -sk --connect-timeout 10 --max-time 60 -o /dev/null -w '%{http_code}' \
+                --noproxy '*' $RESOLVE -X POST "${API}/applications/${app}/rollback" \
                 -H "$AUTH" -H "Content-Type: application/json" \
-                -d "{\"id\":$PREV_ID}" \
-                -w '\nHTTP %{http_code}' || true
+                -d "{\"id\":$PREV_ID}" 2>&1)
+              echo "  HTTP $HTTP_CODE"
             else
               echo "  No previous revision found, skipping rollback"
             fi
