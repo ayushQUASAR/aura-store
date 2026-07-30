@@ -407,7 +407,12 @@ jobs:
         env:
           ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
-          NO_PROXY: argocd.cris-atoms.local
+          http_proxy: ""
+          https_proxy: ""
+          HTTP_PROXY: ""
+          HTTPS_PROXY: ""
+          no_proxy: "*"
+          NO_PROXY: "*"
         run: |
           argocd login "$ARGOCD_SERVER" --auth-token "$ARGOCD_AUTH_TOKEN" --insecure
           for app in aurastore-apps aurastore-infrastructure aurastore-istio aurastore-monitoring; do
@@ -453,7 +458,12 @@ jobs:
         env:
           ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
-          NO_PROXY: argocd.cris-atoms.local
+          http_proxy: ""
+          https_proxy: ""
+          HTTP_PROXY: ""
+          HTTPS_PROXY: ""
+          no_proxy: "*"
+          NO_PROXY: "*"
         run: |
           argocd login "$ARGOCD_SERVER" --auth-token "$ARGOCD_AUTH_TOKEN" --insecure
           for app in aurastore-apps aurastore-infrastructure aurastore-istio aurastore-monitoring; do
