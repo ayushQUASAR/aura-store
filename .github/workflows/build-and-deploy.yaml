@@ -60,8 +60,19 @@ jobs:
               echo "${svc}=true" >> $GITHUB_OUTPUT
             done
           else
-            # Check path-based changes - get all commits in the push
-            CHANGED=$(git diff --name-only HEAD^..HEAD 2>/dev/null || git diff --name-only HEAD 2>/dev/null || echo "")
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              BASE="${{ github.event.pull_request.base.sha }}"
+              HEAD="${{ github.event.pull_request.head.sha }}"
+              CHANGED=$(git diff --name-only "$BASE".."$HEAD" 2>/dev/null || echo "")
+            elif [ "${{ github.event_name }}" = "push" ]; then
+              if git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
+                CHANGED=$(git diff --name-only HEAD~1..HEAD 2>/dev/null || echo "")
+              else
+                CHANGED=$(git diff --name-only "$(git rev-list --max-parents=0 HEAD)" HEAD 2>/dev/null || echo "")
+              fi
+            else
+              CHANGED=""
+            fi
 
             echo "api-gateway=$(echo "$CHANGED" | grep -q '^microservices/api-gateway/' && echo true || echo false)" >> $GITHUB_OUTPUT
             echo "auth-service=$(echo "$CHANGED" | grep -q '^microservices/auth-service/' && echo true || echo false)" >> $GITHUB_OUTPUT
