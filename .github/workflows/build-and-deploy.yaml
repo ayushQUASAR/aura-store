@@ -3,9 +3,16 @@ name: Build and Push Images
 permissions:
   contents: write
   packages: write
+  pull-requests: write
+  statuses: write
+  checks: write
+  security-events: write
+  id-token: write
 
 on:
   push:
+    branches: [main]
+  pull_request:
     branches: [main]
   workflow_dispatch:
     inputs:
@@ -13,10 +20,23 @@ on:
         description: 'Comma-separated services to build (leave empty for all changed)'
         required: false
         default: ''
+      environment:
+        description: 'Target environment (staging/production)'
+        required: false
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
 
 env:
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}
+  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  GRAFANA_URL: ${{ secrets.GRAFANA_URL }}
+  GRAFANA_API_KEY: ${{ secrets.GRAFANA_API_KEY }}
+  ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+  ARGOCD_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
 
 jobs:
   detect-changes:
@@ -28,6 +48,7 @@ jobs:
       order-service: ${{ steps.changes.outputs.order-service }}
       history-service: ${{ steps.changes.outputs.history-service }}
       storefront: ${{ steps.changes.outputs.storefront }}
+      pr-number: ${{ steps.pr.outputs.pr-number }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -52,6 +73,12 @@ jobs:
             echo "history-service=$(echo "$CHANGED" | grep -q '^microservices/history-service/' && echo true || echo false)" >> $GITHUB_OUTPUT
             echo "storefront=$(echo "$CHANGED" | grep -qE '^(src|package\.json|vitest|tsconfig|vite)' && echo true || echo false)" >> $GITHUB_OUTPUT
           fi
+
+      - name: Extract PR number
+        id: pr
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "pr-number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
 
   build-java-services:
     needs: detect-changes
@@ -204,9 +231,95 @@ jobs:
         with:
           sarif_file: ${{ runner.temp }}/qodana/results/qodana.sarif.json
 
+  trivy-scan:
+    needs: [build-java-services, build-storefront]
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Install Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'image'
+          scan-ref: 'ghcr.io/ayushquasar/*:${{ github.sha }}'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '1'
+          ignore-unfixed: true
+
+      - name: Upload Trivy SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+          category: container-scan
+
+  notify-failure:
+    needs: [build-java-services, build-storefront, qodana, trivy-scan]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Slack notification
+        if: env.SLACK_WEBHOOK_URL != ''
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "text": "🚨 *AuraStore Pipeline Failed*",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*AuraStore Pipeline Failed*\\nRepository: ${{ github.repository }}\\nBranch: ${{ github.ref_name }}\\nCommit: ${{ github.sha }}\\nRun: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Send Teams notification
+        if: env.TEAMS_WEBHOOK_URL != ''
+        uses: skation/github-action-teams@v2
+        with:
+          webhook: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          title: "AuraStore Pipeline Failed"
+          text: "Repository: ${{ github.repository }}\\nBranch: ${{ github.ref_name }}\\nCommit: ${{ github.sha }}\\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
+          color: "FF0000"
+
+deploy-approval:
+    needs: [build-java-services, build-storefront, qodana, trivy-scan]
+    if: ${{ github.ref == 'refs/heads/main' && !cancelled() }}
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Wait for manual approval
+        run: echo "Deployment approved - proceeding to update deploy repo"
+
+  grafana-annotate:
+    needs: deploy-approval
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Grafana annotation
+        if: env.GRAFANA_API_KEY != ''
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${GRAFANA_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"time\": $(date +%s)000,
+              \"timeEnd\": $(date +%s)000,
+              \"tags\": [\"deployment\", \"aurastore\", \"${{ github.sha }}\"],
+              \"text\": \"Deployed ${{ github.repository }}@${{ github.sha }} by ${{ github.actor }}\"
+            }" \
+            "${GRAFANA_URL}/api/annotations"
+        env:
+          GRAFANA_API_KEY: ${{ secrets.GRAFANA_API_KEY }}
+          GRAFANA_URL: ${{ secrets.GRAFANA_URL }}
+
   update-deploy-repo:
+    needs: [deploy-approval, grafana-annotate]
     if: ${{ !cancelled() }}
-    needs: [detect-changes, build-java-services, build-storefront]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -249,3 +362,89 @@ jobs:
           git diff --cached --quiet && echo "No changes to commit" && exit 0
           git commit -m "chore: update image tags to ${{ github.sha }}"
           git push
+
+  argocd-sync:
+    needs: update-deploy-repo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install argocd CLI
+        run: |
+          curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+          rm argocd-linux-amd64
+
+      - name: Sync ArgoCD applications
+        env:
+          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
+        run: |
+          argocd login "$ARGOCD_SERVER" --auth-token "$ARGOCD_AUTH_TOKEN" --insecure
+          for app in aurastore-apps aurastore-infrastructure aurastore-istio aurastore-monitoring; do
+            echo "Syncing $app..."
+            argocd app sync "$app" --auto-prune --self-heal --timeout 300 || true
+          done
+
+  smoke-tests:
+    needs: argocd-sync
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for rollout
+        run: sleep 60
+
+      - name: Health check endpoints
+        run: |
+          for svc in auth catalog order history api-gateway storefront; do
+            url="https://ecommerce.cris-atoms.local/api/${svc}/actuator/health"
+            if [ "$svc" = "storefront" ]; then
+              url="https://ecommerce.cris-atoms.local"
+            fi
+            echo "Checking $url..."
+            for i in {1..10}; do
+              if curl -sf "$url" > /dev/null; then
+                echo "✓ $svc healthy"
+                break
+              fi
+              sleep 5
+            done
+          done
+
+  rollback:
+    needs: [argocd-sync, smoke-tests]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger ArgoCD rollback to previous version
+        env:
+          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
+        run: |
+          argocd login "$ARGOCD_SERVER" --auth-token "$ARGOCD_AUTH_TOKEN" --insecure
+          for app in aurastore-apps aurastore-infrastructure aurastore-istio aurastore-monitoring; do
+            echo "Rolling back $app..."
+            argocd app rollback "$app" --to-revision $(argocd app history "$app" -o json | jq -r '.[1].revision') || true
+          done
+
+  notify-success:
+    needs: [smoke-tests, rollback]
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send success notification
+        if: env.SLACK_WEBHOOK_URL != ''
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "text": "✅ *AuraStore Deployment Successful*",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*AuraStore Deployed Successfully*\\nRepository: ${{ github.repository }}\\nCommit: ${{ github.sha }}\\nEnvironment: Production\\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

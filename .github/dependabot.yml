@@ -1,0 +1,245 @@
+version: 2
+updates:
+  - package-ecosystem: "maven"
+    directory: "/microservices/api-gateway"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    labels:
+      - "dependencies"
+      - "maven"
+      - "api-gateway"
+    commit-message:
+      prefix: "deps(api-gateway)"
+    groups:
+      spring-boot:
+        patterns:
+          - "org.springframework.boot:*"
+      spring-cloud:
+        patterns:
+          - "org.springframework.cloud:*"
+      micrometer:
+        patterns:
+          - "io.micrometer:*"
+      opentelemetry:
+        patterns:
+          - "io.opentelemetry:*"
+    open-pull-requests-limit: 10
+
+  - package-ecosystem: "maven"
+    directory: "/microservices/auth-service"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    labels:
+      - "dependencies"
+      - "maven"
+      - "auth-service"
+    commit-message:
+      prefix: "deps(auth-service)"
+    groups:
+      spring-boot:
+        patterns:
+          - "org.springframework.boot:*"
+      security:
+        patterns:
+          - "org.springframework.security:*"
+      jjwt:
+        patterns:
+          - "io.jsonwebtoken:*"
+    open-pull-requests-limit: 10
+
+  - package-ecosystem: "maven"
+    directory: "/microservices/catalog-service"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    labels:
+      - "dependencies"
+      - "maven"
+      - "catalog-service"
+    commit-message:
+      prefix: "deps(catalog-service)"
+    groups:
+      spring-boot:
+        patterns:
+          - "org.springframework.boot:*"
+      redis:
+        patterns:
+          - "org.springframework.boot:spring-boot-starter-data-redis"
+          - "org.springframework.boot:spring-boot-starter-cache"
+      kafka:
+        patterns:
+          - "org.springframework.kafka:*"
+    open-pull-requests-limit: 10
+
+  - package-ecosystem: "maven"
+    directory: "/microservices/order-service"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    labels:
+      - "dependencies"
+      - "maven"
+      - "order-service"
+    commit-message:
+      prefix: "deps(order-service)"
+    groups:
+      spring-boot:
+        patterns:
+          - "org.springframework.boot:*"
+      kafka:
+        patterns:
+          - "org.springframework.kafka:*"
+    open-pull-requests-limit: 10
+
+  - package-ecosystem: "maven"
+    directory: "/microservices/history-service"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    labels:
+      - "dependencies"
+      - "maven"
+      - "history-service"
+    commit-message:
+      prefix: "deps(history-service)"
+    groups:
+      spring-boot:
+        patterns:
+          - "org.springframework.boot:*"
+      kafka:
+        patterns:
+          - "org.springframework.kafka:*"
+    open-pull-requests-limit: 10
+
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "storefront"
+    commit-message:
+      prefix: "deps(storefront)"
+    groups:
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+      vite:
+        patterns:
+          - "vite"
+          - "@vitejs/plugin-react"
+      testing:
+        patterns:
+          - "vitest"
+          - "@testing-library/*"
+          - "jsdom"
+      tailwind:
+        patterns:
+          - "tailwindcss"
+          - "@tailwindcss/vite"
+          - "autoprefixer"
+    open-pull-requests-limit: 10
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "deps(actions)"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "docker"
+    directory: "/microservices/api-gateway"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "api-gateway"
+    commit-message:
+      prefix: "deps(api-gateway-docker)"
+
+  - package-ecosystem: "docker"
+    directory: "/microservices/auth-service"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "auth-service"
+    commit-message:
+      prefix: "deps(auth-service-docker)"
+
+  - package-ecosystem: "docker"
+    directory: "/microservices/catalog-service"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "catalog-service"
+    commit-message:
+      prefix: "deps(catalog-service-docker)"
+
+  - package-ecosystem: "docker"
+    directory: "/microservices/order-service"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "order-service"
+    commit-message:
+      prefix: "deps(order-service-docker)"
+
+  - package-ecosystem: "docker"
+    directory: "/microservices/history-service"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "history-service"
+    commit-message:
+      prefix: "deps(history-service-docker)"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "storefront"
+    commit-message:
+      prefix: "deps(storefront-docker)"
