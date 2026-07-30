@@ -60,8 +60,19 @@ jobs:
               echo "${svc}=true" >> $GITHUB_OUTPUT
             done
           else
-            # Check path-based changes - get all commits in the push
-            CHANGED=$(git diff --name-only HEAD^..HEAD 2>/dev/null || git diff --name-only HEAD 2>/dev/null || echo "")
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              BASE="${{ github.event.pull_request.base.sha }}"
+              HEAD="${{ github.event.pull_request.head.sha }}"
+              CHANGED=$(git diff --name-only "$BASE".."$HEAD" 2>/dev/null || echo "")
+            elif [ "${{ github.event_name }}" = "push" ]; then
+              if git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
+                CHANGED=$(git diff --name-only HEAD~1..HEAD 2>/dev/null || echo "")
+              else
+                CHANGED=$(git diff --name-only "$(git rev-list --max-parents=0 HEAD)" HEAD 2>/dev/null || echo "")
+              fi
+            else
+              CHANGED=""
+            fi
 
             echo "api-gateway=$(echo "$CHANGED" | grep -q '^microservices/api-gateway/' && echo true || echo false)" >> $GITHUB_OUTPUT
             echo "auth-service=$(echo "$CHANGED" | grep -q '^microservices/auth-service/' && echo true || echo false)" >> $GITHUB_OUTPUT
@@ -261,16 +272,14 @@ jobs:
         with:
           payload: |
             {
-              "text": "🚨 *AuraStore Pipeline Failed*",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*AuraStore Pipeline Failed*\\nRepository: ${{ github.repository }}\\nBranch: ${{ github.ref_name }}\\nCommit: ${{ github.sha }}\\nRun: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
-                  }
+              "text": "🚨 *AuraStore Build Failed*",
+              "blocks": [{
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*AuraStore Build/Test Failed*\\nRepository: ${{ github.repository }}\\nBranch: ${{ github.ref_name }}\\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|`${{ github.sha.substr(0,7) }}`>\\nRun: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
                 }
-              ]
+              }]
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -280,9 +289,32 @@ jobs:
         uses: skation/github-action-teams@v2
         with:
           webhook: ${{ secrets.TEAMS_WEBHOOK_URL }}
-          title: "AuraStore Pipeline Failed"
+          title: "AuraStore Build Failed"
           text: "Repository: ${{ github.repository }}\\nBranch: ${{ github.ref_name }}\\nCommit: ${{ github.sha }}\\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
           color: "FF0000"
+
+  notify-deploy-failure:
+    needs: [smoke-tests, rollback]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send deploy failure alert
+        if: env.SLACK_WEBHOOK_URL != ''
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "text": "🔥 *AuraStore Deploy Failed*",
+              "blocks": [{
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*AuraStore Deployment Failed*\\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|`${{ github.sha.substr(0,7) }}`>\\nPipeline passed build stage but failed during deployment or smoke tests\\nRun: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>\\nArgoCD: <https://argocd.cris-atoms.local|Check ArgoCD>"
+                }
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
   deploy-approval:
     needs: [build-java-services, build-storefront, qodana, trivy-scan]
@@ -437,7 +469,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
   notify-success:
-    needs: [smoke-tests, rollback]
+    needs: [notify-deploy-failure]
     if: success()
     runs-on: ubuntu-latest
     steps:
