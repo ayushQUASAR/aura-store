@@ -3,6 +3,7 @@ package com.aurastore.history.controller;
 import com.aurastore.history.domain.OrderHistory;
 import com.aurastore.history.domain.OrderHistoryRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -23,6 +24,9 @@ class HistoryControllerTest {
 
     @MockBean
     private OrderHistoryRepository orderHistoryRepository;
+
+    @MockBean
+    private MeterRegistry meterRegistry;
 
     @Test
     void getHistoryByEmail_returnsList() throws Exception {

@@ -3,6 +3,7 @@ package com.aurastore.order.controller;
 import com.aurastore.order.domain.Order;
 import com.aurastore.order.domain.OrderItem;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -33,6 +34,9 @@ class OrderControllerTest {
 
     @MockBean
     private KafkaTemplate<String, String> kafkaTemplate;
+
+    @MockBean
+    private MeterRegistry meterRegistry;
 
     @Test
     void getOrders_returnsList() throws Exception {

@@ -2,6 +2,7 @@ package com.aurastore.catalog.controller;
 
 import com.aurastore.catalog.domain.Product;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -35,6 +36,9 @@ class CatalogControllerTest {
 
     @MockBean
     private KafkaTemplate<String, String> kafkaTemplate;
+
+    @MockBean
+    private MeterRegistry meterRegistry;
 
     @Test
     void getAllProducts_returnsList() throws Exception {
