@@ -3070,6 +3070,236 @@ data:
               }
             }
           ]
+        },
+      {
+          "type": "row",
+          "title": "Autoscaling",
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 87
+          },
+          "collapsed": false,
+          "id": 110,
+          "panels": []
+        },
+        {
+          "id": 38,
+          "title": "HPA Replicas",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 88
+          },
+          "targets": [
+            {
+              "expr": "kube_horizontalpodautoscaler_status_current_replicas{namespace=\"production-retail\"}",
+              "legendFormat": "{{horizontalpodautoscaler}} current",
+              "refId": "A"
+            },
+            {
+              "expr": "kube_horizontalpodautoscaler_status_desired_replicas{namespace=\"production-retail\"}",
+              "legendFormat": "{{horizontalpodautoscaler}} desired",
+              "refId": "B"
+            },
+            {
+              "expr": "kube_horizontalpodautoscaler_spec_max_replicas{namespace=\"production-retail\"}",
+              "legendFormat": "{{horizontalpodautoscaler}} max",
+              "refId": "C"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "gradientMode": "scheme",
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "pointSize": 5,
+                "showPoints": "never",
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisLabel": "Replicas",
+                "scaleDistribution": {
+                  "type": "linear"
+                }
+              },
+              "unit": "short"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*max"
+                },
+                "properties": [
+                  {
+                    "id": "custom.lineStyle",
+                    "value": {
+                      "fill": "dash",
+                      "dash": [10, 10]
+                    }
+                  },
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "red",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "custom.fillOpacity",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*current"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*desired"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "yellow",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "custom.fillOpacity",
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": ["lastNotNull", "mean", "max"]
+            }
+          }
+        },
+        {
+          "id": 39,
+          "title": "CPU Utilization vs HPA Threshold",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 88
+          },
+          "targets": [
+            {
+              "expr": "(sum(rate(container_cpu_usage_seconds_total{namespace=\"production-retail\",container!=\"\"}[5m])) by (pod) / on(pod) sum(kube_pod_container_resource_requests{namespace=\"production-retail\",resource=\"cpu\"}) by (pod)) * 100",
+              "legendFormat": "{{pod}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "gradientMode": "scheme",
+                "drawStyle": "line",
+                "lineInterpolation": "smooth",
+                "pointSize": 5,
+                "showPoints": "never",
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisLabel": "CPU % of Request",
+                "scaleDistribution": {
+                  "type": "linear"
+                }
+              },
+              "unit": "percent",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "green"
+                  },
+                  {
+                    "value": 50,
+                    "color": "yellow"
+                  },
+                  {
+                    "value": 80,
+                    "color": "red"
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".+"
+                },
+                "properties": [
+                  {
+                    "id": "custom.thresholdsStyle",
+                    "value": {
+                      "mode": "line+dashed"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": ["lastNotNull", "mean", "max"]
+            }
+          }
         }
       ],
       "schemaVersion": 39

@@ -5,6 +5,8 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +21,7 @@ import java.util.Optional;
 
 @Repository
 interface ProductRepository extends JpaRepository<Product, Long> {
-    List<Product> findByCategory(String category);
+    Page<Product> findByCategory(String category, Pageable pageable);
 }
 
 @Service
@@ -74,12 +76,12 @@ public class CatalogController {
     }
 
     @GetMapping("/products")
-    public List<Product> getAllProducts(@RequestParam(required = false) String category) {
+    public Page<Product> getAllProducts(@RequestParam(required = false) String category, Pageable pageable) {
         fetchCounter.increment();
         if (category != null && !category.equalsIgnoreCase("All")) {
-            return productRepository.findByCategory(category);
+            return productRepository.findByCategory(category, pageable);
         }
-        return productRepository.findAll();
+        return productRepository.findAll(pageable);
     }
 
     @GetMapping("/categories")
