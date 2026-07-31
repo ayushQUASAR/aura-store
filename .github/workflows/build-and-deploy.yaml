@@ -323,7 +323,7 @@ jobs:
 
   update-deploy-repo:
     needs: [deploy-approval]
-    if: ${{ !cancelled() }}
+    if: ${{ github.ref == 'refs/heads/main' && !cancelled() }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
