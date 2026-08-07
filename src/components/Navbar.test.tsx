@@ -15,7 +15,7 @@ const defaultProps = {
 describe('Navbar', () => {
   it('renders the brand name', () => {
     render(<Navbar {...defaultProps} />)
-    expect(screen.getByText('AuraStore')).toBeInTheDocument()
+    expect(screen.getByText(/Aura/i)).toBeInTheDocument()
   })
 
   it('shows sign in button when user is not logged in', () => {

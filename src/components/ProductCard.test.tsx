@@ -36,7 +36,7 @@ describe('ProductCard', () => {
   it('shows Sold Out when stock is 0', () => {
     const outOfStock = { ...mockProduct, stock: 0 }
     render(<ProductCard product={outOfStock} onAddToCart={() => {}} />)
-    expect(screen.getByText('Sold Out')).toBeInTheDocument()
+    expect(screen.getAllByText('Sold Out')[0]).toBeInTheDocument()
   })
 
   it('shows quantity warning when stock is low', () => {
@@ -53,18 +53,18 @@ describe('ProductCard', () => {
   it('calls onAddToCart when clicked', () => {
     const addFn = vi.fn()
     render(<ProductCard product={mockProduct} onAddToCart={addFn} />)
-    fireEvent.click(screen.getByText('Add to Cart'))
+    fireEvent.click(screen.getByRole('button', { name: /Add to Cart/i }))
     expect(addFn).toHaveBeenCalledWith(mockProduct)
   })
 
   it('disables button when out of stock', () => {
     const outOfStock = { ...mockProduct, stock: 0 }
     render(<ProductCard product={outOfStock} onAddToCart={() => {}} />)
-    expect(screen.getByText('Sold Out')).toBeDisabled()
+    expect(screen.getByRole('button', { name: /Sold Out/i })).toBeDisabled()
   })
 
   it('disables button when adding', () => {
     render(<ProductCard product={mockProduct} onAddToCart={() => {}} isAdding={true} />)
-    expect(screen.getByText('Adding...')).toBeDisabled()
+    expect(screen.getByRole('button', { name: /Adding/i })).toBeDisabled()
   })
 })

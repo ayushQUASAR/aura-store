@@ -27,7 +27,7 @@ describe('AuthModal', () => {
   it('shows validation error when fields empty', async () => {
     const loginFn = vi.fn()
     render(<AuthModal isOpen={true} onClose={() => {}} onLogin={loginFn} />)
-    fireEvent.click(screen.getByText('Sign In'))
+    fireEvent.click(screen.getByRole('button', { name: /Sign In/i }))
     await waitFor(() => {
       expect(screen.getByText('Please fill out all required fields.')).toBeInTheDocument()
     })
@@ -39,7 +39,7 @@ describe('AuthModal', () => {
     render(<AuthModal isOpen={true} onClose={() => {}} onLogin={loginFn} />)
     fireEvent.change(screen.getByPlaceholderText('customer@example.com'), { target: { value: 'test@test.com' } })
     fireEvent.change(screen.getByPlaceholderText('password123'), { target: { value: 'pass123' } })
-    fireEvent.click(screen.getByText('Sign In'))
+    fireEvent.click(screen.getByRole('button', { name: /Sign In/i }))
     await waitFor(() => {
       expect(loginFn).toHaveBeenCalledWith('test@test.com', 'test', 'CUSTOMER', 'pass123', true)
     })
@@ -50,9 +50,10 @@ describe('AuthModal', () => {
     render(<AuthModal isOpen={true} onClose={() => {}} onLogin={loginFn} />)
     fireEvent.click(screen.getByText('Need an account? Register instead'))
     fireEvent.change(screen.getByPlaceholderText('Jane Doe'), { target: { value: 'Test User' } })
+    fireEvent.change(screen.getByPlaceholderTextEditorTool; read those first...
     fireEvent.change(screen.getByPlaceholderText('customer@example.com'), { target: { value: 'test@test.com' } })
     fireEvent.change(screen.getByPlaceholderText('password123'), { target: { value: 'pass123' } })
-    fireEvent.click(screen.getByText('Register Account'))
+    fireEvent.click(screen.getByRole('button', { name: /Register Account/i }))
     await waitFor(() => {
       expect(loginFn).toHaveBeenCalledWith('test@test.com', 'Test User', 'CUSTOMER', 'pass123', false)
     })
@@ -63,7 +64,7 @@ describe('AuthModal', () => {
     render(<AuthModal isOpen={true} onClose={() => {}} onLogin={loginFn} />)
     fireEvent.change(screen.getByPlaceholderText('customer@example.com'), { target: { value: 'test@test.com' } })
     fireEvent.change(screen.getByPlaceholderText('password123'), { target: { value: 'wrong' } })
-    fireEvent.click(screen.getByText('Sign In'))
+    fireEvent.click(screen.getByRole('button', { name: /Sign In/i }))
     await waitFor(() => {
       expect(screen.getByText('Invalid credentials')).toBeInTheDocument()
     })
@@ -75,7 +76,7 @@ describe('AuthModal', () => {
     render(<AuthModal isOpen={true} onClose={closeFn} onLogin={loginFn} />)
     fireEvent.change(screen.getByPlaceholderText('customer@example.com'), { target: { value: 'test@test.com' } })
     fireEvent.change(screen.getByPlaceholderText('password123'), { target: { value: 'pass123' } })
-    fireEvent.click(screen.getByText('Sign In'))
+    fireEvent.click(screen.getByRole('button', { name: /Sign In/i }))
     await waitFor(() => {
       expect(closeFn).toHaveBeenCalled()
     })

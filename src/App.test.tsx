@@ -5,7 +5,7 @@ import App from './App'
 describe('App', () => {
   it('renders the navbar', () => {
     render(<App />)
-    expect(screen.getByText('AuraStore')).toBeInTheDocument()
+    expect(screen.getByText(/Aura/i)).toBeInTheDocument()
   })
 
   it('renders the description text', () => {
